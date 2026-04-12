@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>TimeBattle — Farcaster MiniApp</title>
+    <meta property="og:title" content="My Farcaster App">
+    <meta property="og:image" content="APP_IMAGE_URL">
+    <meta name="fc:frame" content='{"version":"next","imageUrl":"APP_IMAGE_URL","button":{"title":"Launch App","action":{"type":"launch_frame","name":"Mini App","url":"APP_URL","splashImageUrl":"APP_IMAGE_URL","splashBackgroundColor":"#000000"}}}' />
 <meta property="fc:frame" content="vNext">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -672,6 +675,27 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
+    <script type="module">
+        import sdk from 'https://esm.sh/@farcaster/frame-sdk';
+        window.fcSdk = sdk; 
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            // Wait 300ms for Frame environment sync
+            setTimeout(() => {
+                try {
+                    if (window.fcSdk && window.fcSdk.actions) {
+                        window.fcSdk.actions.ready(); // TELLS FARCASTER TO REMOVE SPLASH SCREEN
+                        window.fcSdk.context.then(async context => {
+                            if (context && context.user) {
+                                window.fcUsername = context.user.username || null;
+                                console.log("Connected Farcaster User:", window.fcUsername);
+                            }
+                        }).catch((e)=>{ console.log("No FC context found", e); });
+                    }
+                } catch (e) { console.error("SDK Ready Error:", e); }
+            }, 300);
+        });
+    </script>
 </head>
 <body>
 
