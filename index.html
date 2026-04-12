@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TimeBattle — Farcaster MiniApp</title>
+<meta property="fc:frame" content="vNext">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a12;
+    --surface: #0d1420;
+    --surface2: #131c2e;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7cff6b;
+    --gold: #ffd700;
+    --text: #e8f4ff;
+    --muted: #5a7a99;
+    --danger: #ff4444;
+    --paid: #ff6b35;
+    --free: #7cff6b;
+    --radius: 12px;
+    --min-eth: 0.000006538;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  /* ─── TICKER ─── */
+  .ticker-wrap {
+    width: 100%;
+    background: linear-gradient(90deg, #00d4ff22, #ff6b3522);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .ticker-label {
+    background: var(--accent);
+    color: #000;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 0 10px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 1px;
+  }
+  .ticker-track {
+    display: flex;
+    animation: ticker 18s linear infinite;
+    white-space: nowrap;
+  }
+  .ticker-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    padding: 0 24px;
+    opacity: 0.9;
+  }
+  .ticker-item span { color: var(--accent2); }
+  @keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ─── NAV ─── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .nav-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 10px 4px 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn svg { width: 20px; height: 20px; }
+
+  /* ─── PAGES ─── */
+  .page { display: none; padding: 12px 14px 90px; }
+  .page.active { display: block; }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  /* ─── ROUND CARD ─── */
+  .round-card {
+    background: linear-gradient(135deg, #0d1420 0%, #131c2e 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .round-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .round-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #00d4ff15;
+    border: 1px solid #00d4ff33;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .round-badge.live { background: #ff443315; border-color: #ff443333; color: var(--danger); }
+  .dot-live {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--danger);
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+
+  .round-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .round-meta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+  .round-meta strong { color: var(--text); }
+
+  /* ─── TIMER DISPLAY ─── */
+  .timer-display {
+    background: #00000033;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .timer-digits {
+    font-family: 'Space Mono', monospace;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px #00d4ff55;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .timer-digits.urgent { color: var(--danger); text-shadow: 0 0 20px #ff444455; }
+  .timer-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+
+  /* ─── ACTION BUTTONS ─── */
+  .action-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .btn {
+    flex: 1;
+    border: none;
+    border-radius: 10px;
+    padding: 13px 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    letter-spacing: 0.3px;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-free {
+    background: linear-gradient(135deg, #1a3a1a, #1f4a1f);
+    border: 1px solid #7cff6b44;
+    color: var(--free);
+  }
+  .btn-free:hover { border-color: var(--free); background: #1f4a1f; }
+  .btn-paid {
+    background: linear-gradient(135deg, #3a1a0a, #4a2010);
+    border: 1px solid #ff6b3544;
+    color: var(--paid);
+  }
+  .btn-paid:hover { border-color: var(--paid); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    color: #000;
+    font-weight: 800;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: linear-gradient(135deg, #3a0a0a, #4a1010); border: 1px solid #ff444444; color: var(--danger); }
+  .btn-gold { background: linear-gradient(135deg, #3a2a00, #4a3800); border: 1px solid #ffd70044; color: var(--gold); }
+  .btn-disabled { opacity: 0.4; pointer-events: none; }
+
+  .btn-time {
+    width: 48%;
+    padding: 11px;
+    font-size: 12px;
+    border-radius: 10px;
+  }
+
+  /* ─── POINTS PILL ─── */
+  .points-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #ffd70015;
+    border: 1px solid #ffd70033;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold);
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* ─── COOLDOWN BAR ─── */
+  .cooldown-wrap { margin-bottom: 12px; }
+  .cooldown-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-family: 'Space Mono', monospace;
+  }
+  .cooldown-bar {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .cooldown-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--free), var(--accent));
+    border-radius: 2px;
+    transition: width 1s linear;
+  }
+
+  /* ─── LEADERBOARD ─── */
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    width: 28px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .lb-rank.gold { color: var(--gold); }
+  .lb-rank.silver { color: #c0c0c0; }
+  .lb-rank.bronze { color: #cd7f32; }
+  .lb-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px; color: #000;
+    flex-shrink: 0;
+  }
+  .lb-name { flex: 1; font-weight: 600; font-size: 14px; }
+  .lb-pts {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* ─── INPUT ─── */
+  .input-group { margin-bottom: 12px; }
+  .input-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .input-field {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--muted); }
+  select.input-field option { background: var(--surface2); }
+
+  .seg-control {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 3px;
+  }
+  .seg-btn {
+    flex: 1;
+    border: none;
+    background: none;
+    color: var(--muted);
+    padding: 8px;
+    border-radius: 6px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .seg-btn.active { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
+
+  /* ─── PROMO CARD ─── */
+  .promo-card {
+    background: linear-gradient(135deg, #1a0d30, #0d1a30);
+    border: 1px solid #7c6bff33;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .promo-card:hover { border-color: #7c6bff99; }
+  .promo-label { font-size: 10px; letter-spacing: 2px; color: #7c6bff; font-weight: 700; margin-bottom: 6px; }
+  .promo-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .promo-url { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); }
+
+  /* ─── SECTION TABS ─── */
+  .section-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .section-tab {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .section-tab.active {
+    background: #00d4ff15;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ─── HEADER ─── */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .page-header h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000000cc;
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 18px;
+    width: 100%;
+    max-width: 430px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+  .modal-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ─── STAT GRID ─── */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 3px;
+  }
+  .stat-key { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+
+  /* ─── REFERRAL ─── */
+  .ref-code-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .ref-code {
+    flex: 1;
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+  .copy-btn {
+    background: var(--border);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: background 0.2s;
+  }
+  .copy-btn:hover { background: var(--accent); color: #000; }
+
+  /* ─── CHECKIN ─── */
+  .checkin-days { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .day-dot {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    position: relative;
+  }
+  .day-dot.done { border-color: var(--free); color: var(--free); background: #7cff6b15; }
+  .day-dot.today { border-color: var(--accent); color: var(--accent); background: #00d4ff15; }
+
+  /* ─── SURPRISE ─── */
+  .surprise-card {
+    background: linear-gradient(135deg, #1a0010, #200020);
+    border: 1px solid #ff00ff33;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .surprise-icon { font-size: 40px; margin-bottom: 10px; }
+  .surprise-text { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  .surprise-text strong { color: #ff88ff; }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--surface2);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    z-index: 300;
+    transition: transform 0.3s;
+    white-space: nowrap;
+    font-family: 'Space Mono', monospace;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ─── ETH INPUT ─── */
+  .eth-calc {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .eth-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .eth-row:last-child { margin-bottom: 0; }
+  .eth-row-label { font-size: 11px; color: var(--muted); flex: 1; }
+  .eth-row-val { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text); }
+  .eth-row-val.accent { color: var(--accent); }
+  .eth-row-val.gold { color: var(--gold); }
+
+  /* ─── MISC ─── */
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+  .text-muted { color: var(--muted); font-size: 12px; }
+  .text-accent { color: var(--accent); }
+  .text-paid { color: var(--paid); }
+  .text-free { color: var(--free); }
+  .text-gold { color: var(--gold); }
+  .fw-bold { font-weight: 700; }
+  .mt-8 { margin-top: 8px; }
+  .mb-8 { margin-bottom: 8px; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .reward-pool-badge {
+    background: linear-gradient(135deg, #2a1a00, #3a2800);
+    border: 1px solid #ffd70033;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .reward-icon { font-size: 24px; }
+  .reward-info { flex: 1; }
+  .reward-label { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2px; }
+  .reward-val { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--gold); }
+
+  /* Recent txns */
+  .txn-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .txn-row:last-child { border-bottom: none; }
+  .txn-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--accent2), var(--accent)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #000; flex-shrink: 0; }
+  .txn-name { flex: 1; font-weight: 600; }
+  .txn-type-free { color: var(--free); font-size: 10px; font-weight: 700; }
+  .txn-type-paid { color: var(--paid); font-size: 10px; font-weight: 700; }
+  .txn-pts { font-family: 'Space Mono', monospace; color: var(--gold); font-size: 11px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ─── TICKER ─── -->
+<div class="ticker-wrap">
+  <div class="ticker-label">⚡ LIVE</div>
+  <div style="overflow:hidden;flex:1">
+    <div class="ticker-track" id="tickerTrack">
+      <span class="ticker-item">🔵 <span>vitalik.eth</span> voted -10s FREE</span>
+      <span class="ticker-item">🟠 <span>dwr.eth</span> voted +10s PAID ×2.3</span>
+      <span class="ticker-item">🟢 <span>jessepollak</span> voted -10s FREE</span>
+      <span class="ticker-item">🔴 <span>harikaran</span> voted +10s PAID ×1.8</span>
+      <span class="ticker-item">🔵 <span>coinbase</span> voted -10s FREE</span>
+      <span class="ticker-item">🟠 <span>nick.eth</span> voted +10s PAID ×3.1</span>
+      <span class="ticker-item">🔵 <span>vitalik.eth</span> voted -10s FREE</span>
+      <span class="ticker-item">🟠 <span>dwr.eth</span> voted +10s PAID ×2.3</span>
+      <span class="ticker-item">🟢 <span>jessepollak</span> voted -10s FREE</span>
+      <span class="ticker-item">🔴 <span>harikaran</span> voted +10s PAID ×1.8</span>
+      <span class="ticker-item">🔵 <span>coinbase</span> voted -10s FREE</span>
+      <span class="ticker-item">🟠 <span>nick.eth</span> voted +10s PAID ×3.1</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ PAGE: ROUNDS ════════════════ -->
+<div class="page active" id="page-rounds">
+
+  <div class="page-header" style="margin-top:14px">
+    <h1>TimeBattle ⚡</h1>
+    <div class="points-pill">🏅 <span id="myTotalPts">0</span> PTS</div>
+  </div>
+
+  <!-- Section tabs -->
+  <div class="section-tabs">
+    <div class="section-tab active" onclick="switchRoundTab('live',this)">🔴 Live</div>
+    <div class="section-tab" onclick="switchRoundTab('previous',this)">📜 Previous</div>
+    <div class="section-tab" onclick="switchRoundTab('create',this)">＋ Create</div>
+  </div>
+
+  <!-- LIVE ROUNDS -->
+  <div id="tab-live">
+    <div id="liveRoundsContainer"></div>
+  </div>
+
+  <!-- PREVIOUS ROUNDS -->
+  <div id="tab-previous" style="display:none">
+    <div id="prevRoundsContainer"></div>
+  </div>
+
+  <!-- CREATE ROUND -->
+  <div id="tab-create" style="display:none">
+    <div class="card">
+      <div class="card-title">🛡 Create New Round</div>
+
+      <div class="input-group">
+        <label class="input-label">Round Name</label>
+        <input class="input-field" id="cr-name" placeholder="e.g. Alpha War #1" maxlength="40">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Round Duration</label>
+        <div class="seg-control" id="cr-duration-seg">
+          <button class="seg-btn active" onclick="selectDuration(1,this)">1h</button>
+          <button class="seg-btn" onclick="selectDuration(2,this)">2h</button>
+          <button class="seg-btn" onclick="selectDuration(6,this)">6h</button>
+          <button class="seg-btn" onclick="selectDuration(12,this)">12h</button>
+          <button class="seg-btn" onclick="selectDuration(24,this)">24h</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Custom Duration (1–24 hours)</label>
+        <input class="input-field" id="cr-custom-hours" type="number" min="1" max="24" placeholder="Enter hours (1-24)" oninput="customDurationInput(this)">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Free Vote Cooldown</label>
+        <div class="seg-control">
+          <button class="seg-btn active" onclick="selectCooldown(30,this)">30 min</button>
+          <button class="seg-btn" onclick="selectCooldown(15,this)">15 min</button>
+          <button class="seg-btn" onclick="selectCooldown(10,this)">10 min</button>
+          <button class="seg-btn" onclick="selectCooldown(5,this)">5 min</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Custom Cooldown (minutes)</label>
+        <input class="input-field" id="cr-custom-cooldown" type="number" min="1" placeholder="Enter minutes" oninput="customCooldownInput(this)">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Reward Pool (ETH)</label>
+        <input class="input-field" id="cr-reward" type="number" step="0.001" min="0.001" placeholder="0.01">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Reward Token</label>
+        <select class="input-field" id="cr-token">
+          <option value="ETH">ETH</option>
+          <option value="ARB">ARB</option>
+          <option value="USDC">USDC</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Promotion Link (optional)</label>
+        <input class="input-field" id="cr-promo-url" type="url" placeholder="https://warpcast.com/yourprofile">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Promotion Label (optional)</label>
+        <input class="input-field" id="cr-promo-label" placeholder="Follow my Warpcast!">
+      </div>
+
+      <div class="eth-calc">
+        <div class="flex-between mb-8">
+          <span class="text-muted">Platform deposit</span>
+          <span class="eth-row-val accent" id="cr-deposit-val">— ETH</span>
+        </div>
+        <div class="flex-between">
+          <span class="text-muted">Min paid vote</span>
+          <span class="eth-row-val">0.000006538 ETH</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="openCreateConfirm()" style="width:100%;border-radius:10px;padding:14px">
+        🚀 Pay & Create Round
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ PAGE: LEADERBOARD ════════════════ -->
+<div class="page" id="page-lb">
+  <div class="page-header" style="margin-top:14px">
+    <h1>Leaderboard 🏆</h1>
+  </div>
+  <div class="section-tabs">
+    <div class="section-tab active" onclick="switchLbTab('global',this)">🌐 Global</div>
+    <div class="section-tab" onclick="switchLbTab('round',this)">🎯 This Round</div>
+  </div>
+
+  <div id="lb-global">
+    <div class="card" style="padding:8px 14px" id="globalLbList"></div>
+  </div>
+  <div id="lb-round" style="display:none">
+    <div class="card" style="padding:8px 14px" id="roundLbList"></div>
+  </div>
+
+  <div class="surprise-card">
+    <div class="surprise-icon">🎁</div>
+    <div class="surprise-text">
+      <strong>SURPRISE REWARD</strong><br>
+      Special bonus for top performers revealed when the round ends. Keep earning points — something big is coming! 👀
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ PAGE: PROFILE ════════════════ -->
+<div class="page" id="page-profile">
+  <div class="page-header" style="margin-top:14px">
+    <h1>My Profile 👤</h1>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="stat-val" id="prof-total-pts">0</div>
+      <div class="stat-key">Total Points</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="prof-total-txns">0</div>
+      <div class="stat-key">Transactions</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="prof-rounds-won">0</div>
+      <div class="stat-key">Rounds Won</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="prof-eth-spent">0</div>
+      <div class="stat-key">ETH Spent</div>
+    </div>
+  </div>
+
+  <!-- Claim rewards -->
+  <div class="card">
+    <div class="card-title">💰 Claimable Rewards</div>
+    <div class="reward-pool-badge">
+      <div class="reward-icon">💎</div>
+      <div class="reward-info">
+        <div class="reward-label">Pending Claim</div>
+        <div class="reward-val" id="claimable-amt">0.00 ETH</div>
+      </div>
+      <button class="btn btn-gold" style="flex:0;width:auto;padding:10px 16px;font-size:12px" onclick="claimReward()">CLAIM</button>
+    </div>
+    <p class="text-muted">Win a round to earn rewards. Rewards are distributed based on final points at round end.</p>
+  </div>
+
+  <!-- Check-in -->
+  <div class="card">
+    <div class="card-title">📅 Daily Check-In</div>
+    <div class="checkin-days" id="checkinDays"></div>
+    <button class="btn btn-free" id="checkinBtn" onclick="doCheckin()" style="width:100%;border-radius:10px;padding:12px">
+      Claim Daily +5 PTS (Gas Only)
+    </button>
+  </div>
+</div>
+
+<!-- ════════════════ PAGE: REFER ════════════════ -->
+<div class="page" id="page-refer">
+  <div class="page-header" style="margin-top:14px">
+    <h1>Refer & Earn 🔗</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎁 How It Works</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">1</div>
+        <p class="text-muted">Share your referral code with a friend.</p>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">2</div>
+        <p class="text-muted">Friend joins TimeBattle & completes <strong>10-day check-in streak</strong>.</p>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">3</div>
+        <p class="text-muted">You receive <strong style="color:var(--accent3)">5 ARB tokens</strong> automatically! 🎉</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔑 Your Referral Code</div>
+    <div class="ref-code-box">
+      <div class="ref-code" id="myRefCode">TB-XXXX</div>
+      <button class="copy-btn" onclick="copyRefCode()">COPY</button>
+    </div>
+    <button class="btn btn-primary" style="width:100%;border-radius:10px;padding:13px" onclick="shareRef()">
+      📤 Share on Warpcast
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👥 Your Referrals</div>
+    <div id="refList">
+      <p class="text-muted" style="text-align:center;padding:20px 0">No referrals yet. Share your code!</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎟 Enter Referral Code</div>
+    <div style="display:flex;gap:8px">
+      <input class="input-field" id="enterRefCode" placeholder="TB-XXXX" style="flex:1">
+      <button class="btn btn-outline" style="flex:0;width:auto;padding:11px 16px;font-size:13px;border-radius:8px" onclick="applyRefCode()">APPLY</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── BOTTOM NAV ─── -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="switchPage('rounds',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Rounds
+  </button>
+  <button class="nav-btn" onclick="switchPage('lb',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Leaderboard
+  </button>
+  <button class="nav-btn" onclick="switchPage('profile',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </button>
+  <button class="nav-btn" onclick="switchPage('refer',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Refer
+  </button>
+</nav>
+
+<!-- ─── MODALS ─── -->
+
+<!-- Vote Modal -->
+<div class="modal-overlay" id="voteModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚡ Cast Your Vote</div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Active Round</div>
+      <div style="font-size:16px;font-weight:700" id="vote-round-name">—</div>
+      <div class="timer-display" style="margin-top:12px;margin-bottom:0">
+        <div class="timer-digits" id="vote-timer">00:00:00</div>
+        <div class="timer-label">REMAINING</div>
+      </div>
+    </div>
+
+    <!-- Promo -->
+    <div id="vote-promo-section" style="display:none">
+      <div class="promo-card" id="vote-promo-card" onclick="openPromoLink()">
+        <div class="promo-label">📢 CREATOR PROMO</div>
+        <div class="promo-title" id="vote-promo-title">—</div>
+        <div class="promo-url" id="vote-promo-url">—</div>
+      </div>
+    </div>
+
+    <!-- Vote Direction -->
+    <div class="input-group">
+      <label class="input-label">Vote Direction</label>
+      <div class="seg-control">
+        <button class="seg-btn active" onclick="selectVoteDir(-1,this)">⬇ −10 sec</button>
+        <button class="seg-btn" onclick="selectVoteDir(1,this)">⬆ +10 sec</button>
+      </div>
+    </div>
+
+    <!-- FREE vote -->
+    <div class="card" style="border-color:#7cff6b33;margin-bottom:10px">
+      <div class="flex-between mb-8">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--free)">🟢 FREE Vote</div>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">+2 points · Only Arbitrum gas</div>
+        </div>
+        <div class="points-pill" style="background:#7cff6b15;border-color:#7cff6b33;color:var(--free)">+2 PTS</div>
+      </div>
+      <div class="cooldown-wrap">
+        <div class="cooldown-label">
+          <span>Cooldown</span>
+          <span id="cooldown-timer-display">Ready!</span>
+        </div>
+        <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill" style="width:100%"></div></div>
+      </div>
+      <button class="btn btn-free" id="freeVoteBtn" onclick="doFreeVote()" style="width:100%;border-radius:10px;padding:13px">
+        ✅ Vote FREE (gas only)
+      </button>
+    </div>
+
+    <!-- PAID vote -->
+    <div class="card" style="border-color:#ff6b3533">
+      <div class="flex-between mb-8">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--paid)">🔥 PAID Vote</div>
+          <div class="text-muted" style="font-size:11px;margin-top:2px">Unlimited · Bonus time & points</div>
+        </div>
+      </div>
+      <div class="eth-calc">
+        <div class="eth-row">
+          <span class="eth-row-label">ETH Amount</span>
+        </div>
+        <input class="input-field" id="paid-eth-input" type="number" step="0.000001" min="0.000006538" placeholder="0.000006538" oninput="calcPaidVote(this)" style="margin-bottom:10px">
+        <div class="eth-row">
+          <span class="eth-row-label">Multiplier</span>
+          <span class="eth-row-val accent" id="paid-multiplier">1.0×</span>
+        </div>
+        <div class="eth-row">
+          <span class="eth-row-label">Time Change</span>
+          <span class="eth-row-val" id="paid-time-change">±10 sec</span>
+        </div>
+        <div class="eth-row">
+          <span class="eth-row-label">Points Earned</span>
+          <span class="eth-row-val gold" id="paid-points">2 pts</span>
+        </div>
+      </div>
+      <button class="btn btn-paid" onclick="doPaidVote()" style="width:100%;border-radius:10px;padding:13px">
+        💸 Vote PAID (Arbitrum)
+      </button>
+    </div>
+
+    <button class="btn btn-outline" onclick="closeModal('voteModal')" style="width:100%;margin-top:10px;border-radius:10px;padding:12px">
+      Close
+    </button>
+  </div>
+</div>
+
+<!-- Create Confirm Modal -->
+<div class="modal-overlay" id="createConfirmModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🚀 Confirm Round Creation</div>
+    <div id="createConfirmBody"></div>
+    <button class="btn btn-primary" onclick="confirmCreateRound()" style="width:100%;border-radius:10px;padding:14px;margin-bottom:10px">
+      💳 Pay & Launch Round
+    </button>
+    <button class="btn btn-outline" onclick="closeModal('createConfirmModal')" style="width:100%;border-radius:10px;padding:12px">
+      Cancel
+    </button>
+  </div>
+</div>
+
+<!-- Tx Processing Modal -->
+<div class="modal-overlay" id="txModal">
+  <div class="modal" style="text-align:center;padding:32px 20px">
+    <div class="modal-handle"></div>
+    <div style="font-size:48px;margin-bottom:16px">⚡</div>
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px" id="txModalTitle">Processing...</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="txModalSub">Sending transaction on Arbitrum</div>
+    <div style="display:flex;justify-content:center"><div class="spinner" style="width:32px;height:32px;border-width:3px;color:var(--accent)"></div></div>
+  </div>
+</div>
+
+<!-- TX Success Modal -->
+<div class="modal-overlay" id="txSuccessModal">
+  <div class="modal" style="text-align:center;padding:32px 20px">
+    <div class="modal-handle"></div>
+    <div style="font-size:48px;margin-bottom:14px" id="txSuccessIcon">✅</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:8px" id="txSuccessTitle">Vote Cast!</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:6px" id="txSuccessMsg">—</div>
+    <div class="points-pill" style="margin:14px auto;display:inline-flex" id="txSuccessPts">+2 PTS</div>
+    <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:20px" id="txHash">tx: 0x…</div>
+    <button class="btn btn-primary" onclick="closeModal('txSuccessModal')" style="width:100%;border-radius:10px;padding:13px">
+      Continue
+    </button>
+  </div>
+</div>
+
+<!-- Round end Modal -->
+<div class="modal-overlay" id="roundEndModal">
+  <div class="modal" style="text-align:center;padding:28px 20px">
+    <div class="modal-handle"></div>
+    <div style="font-size:42px;margin-bottom:12px">🏆</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:6px">Round Ended!</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px" id="roundEndMsg">—</div>
+    <div id="roundEndWinner" style="margin-bottom:16px"></div>
+    <button class="btn btn-gold" onclick="goClaimRewards()" style="width:100%;border-radius:10px;padding:13px;margin-bottom:8px">
+      🎁 Claim My Reward
+    </button>
+    <button class="btn btn-outline" onclick="closeModal('roundEndModal')" style="width:100%;border-radius:10px;padding:12px">
+      View Leaderboard
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+const MIN_ETH = 0.000006538;
+
+const state = {
+  myPoints: 0,
+  myTxns: 0,
+  myEthSpent: 0,
+  myRoundsWon: 0,
+  claimable: 0,
+  refCode: 'TB-' + Math.random().toString(36).slice(2,6).toUpperCase(),
+  checkinDays: new Array(10).fill(false),
+  checkinToday: false,
+  cooldownRemaining: 0, // seconds
+  cooldownTotal: 30 * 60,
+  activeRoundId: null,
+  voteDir: -1,
+
+  rounds: [],
+  previousRounds: [],
+
+  createDuration: 1,
+  createCooldown: 30,
+};
+
+// ════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════
+function init() {
+  state.refCode = 'TB-' + Math.random().toString(36).slice(2,6).toUpperCase();
+  document.getElementById('myRefCode').textContent = state.refCode;
+  buildCheckinDays();
+  buildLeaderboard();
+  seedDemoRounds();
+  renderLiveRounds();
+  renderPrevRounds();
+  setInterval(tickTimers, 1000);
+  setInterval(tickCooldown, 1000);
+  updateProfileStats();
+}
+
+// ════════════════════════════════════════════
+//  DEMO DATA
+// ════════════════════════════════════════════
+function seedDemoRounds() {
+  state.rounds = [
+    {
+      id: 'r1',
+      name: 'Arbitrum Alpha War',
+      creator: 'dwr.eth',
+      durationH: 2,
+      durationSec: 7200,
+      remainingSec: 3612,
+      cooldownMin: 30,
+      reward: '0.05 ETH',
+      token: 'ETH',
+      status: 'live',
+      promoUrl: 'https://warpcast.com/dwr.eth',
+      promoLabel: 'Follow dwr.eth on Warpcast!',
+      participants: 24,
+      totalTxns: 87,
+      myPoints: 0,
+      leaderboard: [
+        {name:'vitalik.eth', pts:48, txns:24},
+        {name:'dwr.eth', pts:32, txns:16},
+        {name:'jessepollak', pts:28, txns:14},
+        {name:'nick.eth', pts:20, txns:10},
+        {name:'coinbase', pts:14, txns:7},
+      ],
+      recentTxns: [
+        {name:'vitalik.eth', type:'FREE', pts:2, dir:'-10s'},
+        {name:'dwr.eth', type:'PAID', pts:6, dir:'+10s', mult:'3.1x'},
+        {name:'jessepollak', type:'FREE', pts:2, dir:'-10s'},
+      ]
+    }
+  ];
+
+  state.previousRounds = [
+    {
+      id: 'p1',
+      name: 'Genesis Round',
+      creator: 'timebattle',
+      durationH: 1,
+      reward: '0.02 ETH',
+      token: 'ETH',
+      status: 'ended',
+      participants: 18,
+      totalTxns: 44,
+      winner: 'vitalik.eth',
+      winnerPts: 60,
+      myPoints: 0,
+    }
+  ];
+}
+
+// ════════════════════════════════════════════
+//  ROUND RENDERING
+// ════════════════════════════════════════════
+function renderLiveRounds() {
+  const c = document.getElementById('liveRoundsContainer');
+  if (!state.rounds.length) {
+    c.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--muted)">No live rounds.<br>Create one! 🚀</div>`;
+    return;
+  }
+  c.innerHTML = state.rounds.map(r => roundCard(r)).join('');
+}
+
+function roundCard(r) {
+  const h = Math.floor(r.remainingSec / 3600);
+  const m = Math.floor((r.remainingSec % 3600) / 60);
+  const s = r.remainingSec % 60;
+  const timeStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
+  const urgent = r.remainingSec < 300;
+  const pct = (r.remainingSec / r.durationSec) * 100;
+
+  const promoSection = r.promoUrl ? `
+    <div class="promo-card" onclick="window.open('${r.promoUrl}','_blank')">
+      <div class="promo-label">📢 CREATOR PROMO</div>
+      <div class="promo-title">${r.promoLabel || 'Check this out!'}</div>
+      <div class="promo-url">${r.promoUrl}</div>
+    </div>
+  ` : '';
+
+  return `
+  <div class="round-card" id="rc-${r.id}">
+    <div class="round-badge live"><div class="dot-live"></div> LIVE</div>
+    <div class="round-title">${r.name}</div>
+    <div class="round-meta">
+      <span>by <strong>${r.creator}</strong></span>
+      <span>👥 <strong>${r.participants}</strong></span>
+      <span>⚡ <strong>${r.totalTxns}</strong> txns</span>
+    </div>
+    <div class="timer-display">
+      <div class="timer-digits ${urgent ? 'urgent' : ''}" id="td-${r.id}">${timeStr}</div>
+      <div class="timer-label">TIME REMAINING</div>
+      <div style="margin-top:8px;height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${urgent?'var(--danger)':'linear-gradient(90deg,var(--accent),var(--accent2))'};border-radius:2px;transition:width 1s linear"></div>
+      </div>
+    </div>
+    ${promoSection}
+    <div class="reward-pool-badge">
+      <div class="reward-icon">🏆</div>
+      <div class="reward-info">
+        <div class="reward-label">Reward Pool</div>
+        <div class="reward-val">${r.reward}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--muted)">Cooldown</div>
+        <div style="font-size:12px;font-weight:700;color:var(--text);font-family:'Space Mono',monospace">${r.cooldownMin}min</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:10px;padding:10px 12px">
+      <div class="card-title" style="margin-bottom:8px">🔥 Last 3 Txns (Bonus Points)</div>
+      ${r.recentTxns.map((t,i) => `
+        <div class="txn-row">
+          <div class="txn-avatar">${t.name[0].toUpperCase()}</div>
+          <div class="txn-name">${t.name}</div>
+          <span class="txn-type-${t.type.toLowerCase()}">${t.type}</span>
+          <span class="txn-pts">+${i===0?'15':i===1?'10':'5'}⭐</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="action-row">
+      <button class="btn btn-free btn-time" onclick="openVoteModal('${r.id}')">
+        🟢 Vote FREE
+      </button>
+      <button class="btn btn-paid btn-time" onclick="openVoteModal('${r.id}')">
+        🔥 Vote PAID
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderPrevRounds() {
+  const c = document.getElementById('prevRoundsContainer');
+  if (!state.previousRounds.length) {
+    c.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--muted)">No previous rounds yet.</div>`;
+    return;
+  }
+  c.innerHTML = state.previousRounds.map(r => `
+    <div class="round-card" style="opacity:0.85">
+      <div class="round-badge" style="background:#ffffff10;border-color:#ffffff22;color:var(--muted)">ENDED</div>
+      <div class="round-title">${r.name}</div>
+      <div class="round-meta">
+        <span>by <strong>${r.creator}</strong></span>
+        <span>👥 <strong>${r.participants}</strong></span>
+        <span>⚡ <strong>${r.totalTxns}</strong> txns</span>
+      </div>
+      <div class="flex-between" style="margin-bottom:12px">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">Winner</div>
+          <div style="font-weight:700;color:var(--gold)">🏆 ${r.winner}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--muted)">Reward</div>
+          <div style="font-weight:700;color:var(--gold)">${r.reward}</div>
+        </div>
+      </div>
+      <button class="btn btn-gold" style="width:100%;border-radius:10px;padding:11px" onclick="showToast('Rewards already distributed!')">
+        View Results
+      </button>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════════
+//  TIMERS
+// ════════════════════════════════════════════
+function tickTimers() {
+  state.rounds.forEach(r => {
+    if (r.remainingSec > 0) {
+      r.remainingSec--;
+      const el = document.getElementById(`td-${r.id}`);
+      if (el) {
+        const h = Math.floor(r.remainingSec / 3600);
+        const m = Math.floor((r.remainingSec % 3600) / 60);
+        const s = r.remainingSec % 60;
+        el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        if (r.remainingSec < 300) el.classList.add('urgent');
+      }
+      // Update vote modal timer
+      if (state.activeRoundId === r.id) {
+        const vt = document.getElementById('vote-timer');
+        if (vt) {
+          const h = Math.floor(r.remainingSec / 3600);
+          const m = Math.floor((r.remainingSec % 3600) / 60);
+          const s = r.remainingSec % 60;
+          vt.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+        }
+      }
+      if (r.remainingSec === 0) finalizeRound(r);
+    }
+  });
+}
+
+function tickCooldown() {
+  if (state.cooldownRemaining > 0) {
+    state.cooldownRemaining--;
+    updateCooldownUI();
+  }
+}
+
+function updateCooldownUI() {
+  const rem = state.cooldownRemaining;
+  const total = state.cooldownTotal;
+  const pct = total > 0 ? ((total - rem) / total) * 100 : 100;
+  const fill = document.getElementById('cooldownFill');
+  const label = document.getElementById('cooldown-timer-display');
+  const btn = document.getElementById('freeVoteBtn');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = rem > 0 ? formatTime(rem) : 'Ready!';
+  if (btn) {
+    if (rem > 0) {
+      btn.classList.add('btn-disabled');
+      btn.innerHTML = `⏳ Cooldown ${formatTime(rem)}`;
+    } else {
+      btn.classList.remove('btn-disabled');
+      btn.innerHTML = '✅ Vote FREE (gas only)';
+    }
+  }
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${pad(m)}:${pad(s)}`;
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+// ════════════════════════════════════════════
+//  VOTE MODAL
+// ════════════════════════════════════════════
+function openVoteModal(roundId) {
+  const r = state.rounds.find(x => x.id === roundId);
+  if (!r) return;
+  state.activeRoundId = roundId;
+  document.getElementById('vote-round-name').textContent = r.name;
+  const h = Math.floor(r.remainingSec / 3600);
+  const m = Math.floor((r.remainingSec % 3600) / 60);
+  const s = r.remainingSec % 60;
+  document.getElementById('vote-timer').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+  // promo
+  const promoSec = document.getElementById('vote-promo-section');
+  if (r.promoUrl) {
+    promoSec.style.display = 'block';
+    document.getElementById('vote-promo-title').textContent = r.promoLabel || 'Check this out!';
+    document.getElementById('vote-promo-url').textContent = r.promoUrl;
+  } else {
+    promoSec.style.display = 'none';
+  }
+
+  // cooldown
+  state.cooldownTotal = r.cooldownMin * 60;
+  updateCooldownUI();
+  calcPaidVote({ value: MIN_ETH.toString() });
+  openModal('voteModal');
+}
+
+function openPromoLink() {
+  const r = state.rounds.find(x => x.id === state.activeRoundId);
+  if (r && r.promoUrl) window.open(r.promoUrl, '_blank');
+}
+
+function selectVoteDir(dir, el) {
+  state.voteDir = dir;
+  el.closest('.seg-control').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  calcPaidVote(document.getElementById('paid-eth-input'));
+}
+
+function calcPaidVote(inputEl) {
+  const val = parseFloat(inputEl.value || inputEl) || MIN_ETH;
+  const mult = val / MIN_ETH;
+  const timeSec = Math.round(10 * mult);
+  const pts = Math.round(2 * mult);
+  const dirStr = state.voteDir < 0 ? `−${timeSec} sec` : `+${timeSec} sec`;
+  document.getElementById('paid-multiplier').textContent = mult.toFixed(2) + '×';
+  document.getElementById('paid-time-change').textContent = dirStr;
+  document.getElementById('paid-points').textContent = pts + ' pts';
+}
+
+// ════════════════════════════════════════════
+//  VOTING ACTIONS
+// ════════════════════════════════════════════
+async function doFreeVote() {
+  if (state.cooldownRemaining > 0) { showToast('Cooldown active!'); return; }
+  const r = state.rounds.find(x => x.id === state.activeRoundId);
+  if (!r) return;
+
+  closeModal('voteModal');
+  showTxModal('Sending FREE Vote...', 'On Arbitrum — tiny gas fee');
+  await fakeTx(1200);
+
+  // Apply
+  const timeDelta = state.voteDir * 10;
+  r.remainingSec = Math.max(1, r.remainingSec + timeDelta);
+  r.totalTxns++;
+  state.cooldownRemaining = state.cooldownTotal;
+
+  // Bonus points for last 3
+  addToRecentTxns(r, 'You', 'FREE', '+10s');
+  const bonusPts = calcBonusForPosition(r);
+  const totalPts = 2 + bonusPts;
+
+  addPoints(totalPts, 1);
+  r.myPoints += totalPts;
+
+  closeTxModal();
+  showSuccessModal('Free Vote Cast!', `Timer ${timeDelta>0?'+':''}${timeDelta}s`, totalPts, genFakeTxHash());
+  renderLiveRounds();
+}
+
+async function doPaidVote() {
+  const val = parseFloat(document.getElementById('paid-eth-input').value) || MIN_ETH;
+  const r = state.rounds.find(x => x.id === state.activeRoundId);
+  if (!r) return;
+
+  closeModal('voteModal');
+  showTxModal('Processing PAID Vote...', `Sending ${val.toFixed(8)} ETH on Arbitrum`);
+  await fakeTx(1800);
+
+  const mult = val / MIN_ETH;
+  const timeDelta = Math.round(state.voteDir * 10 * mult);
+  const basePts = Math.round(2 * mult);
+
+  r.remainingSec = Math.max(1, r.remainingSec + timeDelta);
+  r.totalTxns++;
+
+  addToRecentTxns(r, 'You', 'PAID', (timeDelta>0?'+':'')+timeDelta+'s');
+  const bonusPts = calcBonusForPosition(r);
+  const totalPts = basePts + bonusPts;
+
+  addPoints(totalPts, 1, val);
+  r.myPoints += totalPts;
+
+  closeTxModal();
+  showSuccessModal('Paid Vote Cast!', `Timer ${timeDelta>0?'+':''}${timeDelta}s · ${mult.toFixed(2)}× multiplier`, totalPts, genFakeTxHash());
+  renderLiveRounds();
+}
+
+function calcBonusForPosition(r) {
+  // last 3 txns bonus
+  const pos = r.recentTxns.findIndex(t => t.name === 'You');
+  if (pos === 0) return 15;
+  if (pos === 1) return 10;
+  if (pos === 2) return 5;
+  return 0;
+}
+
+function addToRecentTxns(r, name, type, dir) {
+  r.recentTxns.unshift({ name, type, pts: 2, dir });
+  if (r.recentTxns.length > 3) r.recentTxns = r.recentTxns.slice(0, 3);
+}
+
+function addPoints(pts, txns, eth = 0) {
+  state.myPoints += pts;
+  state.myTxns += txns;
+  state.myEthSpent += eth;
+  document.getElementById('myTotalPts').textContent = state.myPoints;
+  updateProfileStats();
+}
+
+function updateProfileStats() {
+  document.getElementById('prof-total-pts').textContent = state.myPoints;
+  document.getElementById('prof-total-txns').textContent = state.myTxns;
+  document.getElementById('prof-rounds-won').textContent = state.myRoundsWon;
+  document.getElementById('prof-eth-spent').textContent = state.myEthSpent.toFixed(6);
+}
+
+// ════════════════════════════════════════════
+//  ROUND LIFECYCLE
+// ════════════════════════════════════════════
+function finalizeRound(r) {
+  r.status = 'ended';
+  const winner = r.leaderboard[0];
+  document.getElementById('roundEndMsg').textContent = `${r.name} has ended!`;
+  document.getElementById('roundEndWinner').innerHTML = `
+    <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Winner</div>
+    <div style="font-size:18px;font-weight:800;color:var(--gold)">🏆 ${winner?.name || 'TBD'}</div>
+    <div style="font-size:13px;color:var(--muted)">${winner?.pts || 0} points</div>
+  `;
+  if (r.myPoints > 0) { state.claimable += 0.001; document.getElementById('claimable-amt').textContent = state.claimable.toFixed(4) + ' ETH'; }
+  state.previousRounds.unshift({ ...r, winner: winner?.name || 'TBD', winnerPts: winner?.pts || 0 });
+  state.rounds = state.rounds.filter(x => x.id !== r.id);
+  renderLiveRounds();
+  renderPrevRounds();
+  openModal('roundEndModal');
+}
+
+function goClaimRewards() {
+  closeModal('roundEndModal');
+  switchPage('profile', document.querySelectorAll('.nav-btn')[2]);
+}
+
+// ════════════════════════════════════════════
+//  CREATE ROUND
+// ════════════════════════════════════════════
+let _createDuration = 1, _createCooldown = 30;
+
+function selectDuration(h, el) {
+  _createDuration = h;
+  el.closest('.seg-control').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('cr-custom-hours').value = '';
+  updateCreateDeposit();
+}
+function customDurationInput(el) {
+  const v = Math.min(24, Math.max(1, parseInt(el.value) || 1));
+  _createDuration = v;
+  el.closest('.card').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  updateCreateDeposit();
+}
+function selectCooldown(m, el) {
+  _createCooldown = m;
+  el.closest('.seg-control').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('cr-custom-cooldown').value = '';
+}
+function customCooldownInput(el) {
+  _createCooldown = Math.max(1, parseInt(el.value) || 30);
+  el.closest('.card').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+}
+function updateCreateDeposit() {
+  const reward = parseFloat(document.getElementById('cr-reward')?.value) || 0;
+  const deposit = (reward + 0.001).toFixed(6);
+  document.getElementById('cr-deposit-val').textContent = deposit + ' ETH';
+}
+
+function openCreateConfirm() {
+  const name = document.getElementById('cr-name').value.trim();
+  const reward = document.getElementById('cr-reward').value;
+  const token = document.getElementById('cr-token').value;
+  const promoUrl = document.getElementById('cr-promo-url').value;
+  const promoLabel = document.getElementById('cr-promo-label').value;
+  if (!name) { showToast('Enter a round name!'); return; }
+  if (!reward) { showToast('Enter reward amount!'); return; }
+
+  const deposit = (parseFloat(reward) + 0.001).toFixed(6);
+  document.getElementById('createConfirmBody').innerHTML = `
+    <div class="card" style="margin-bottom:14px">
+      <div class="flex-between mb-8"><span class="text-muted">Round Name</span><span class="fw-bold">${name}</span></div>
+      <div class="flex-between mb-8"><span class="text-muted">Duration</span><span class="fw-bold">${_createDuration}h</span></div>
+      <div class="flex-between mb-8"><span class="text-muted">Free Cooldown</span><span class="fw-bold">${_createCooldown} min</span></div>
+      <div class="flex-between mb-8"><span class="text-muted">Reward Pool</span><span class="fw-bold text-gold">${reward} ${token}</span></div>
+      ${promoUrl ? `<div class="flex-between mb-8"><span class="text-muted">Promo</span><span class="fw-bold text-accent" style="font-size:11px">${promoUrl.slice(0,30)}…</span></div>` : ''}
+      <div class="divider"></div>
+      <div class="flex-between"><span class="text-muted">You Pay</span><span style="font-size:16px;font-weight:800;color:var(--accent)">${deposit} ETH</span></div>
+    </div>
+  `;
+  openModal('createConfirmModal');
+}
+
+async function confirmCreateRound() {
+  const name = document.getElementById('cr-name').value.trim();
+  const reward = document.getElementById('cr-reward').value;
+  const token = document.getElementById('cr-token').value;
+  const promoUrl = document.getElementById('cr-promo-url').value;
+  const promoLabel = document.getElementById('cr-promo-label').value;
+
+  closeModal('createConfirmModal');
+  showTxModal('Creating Round...', 'Depositing reward pool on Arbitrum');
+  await fakeTx(2000);
+  closeTxModal();
+
+  const newRound = {
+    id: 'r' + Date.now(),
+    name,
+    creator: 'you',
+    durationH: _createDuration,
+    durationSec: _createDuration * 3600,
+    remainingSec: _createDuration * 3600,
+    cooldownMin: _createCooldown,
+    reward: reward + ' ' + token,
+    token,
+    status: 'live',
+    promoUrl,
+    promoLabel,
+    participants: 1,
+    totalTxns: 0,
+    myPoints: 0,
+    leaderboard: [{name:'you', pts:0, txns:0}],
+    recentTxns: [],
+  };
+  state.rounds.push(newRound);
+  renderLiveRounds();
+  switchRoundTab('live', document.querySelector('.section-tab'));
+  showToast('Round Created! 🚀');
+  document.getElementById('cr-name').value = '';
+  document.getElementById('cr-reward').value = '';
+}
+
+// ════════════════════════════════════════════
+//  LEADERBOARD
+// ════════════════════════════════════════════
+const globalPlayers = [
+  {name:'vitalik.eth', pts:1240, txns:620},
+  {name:'dwr.eth', pts:890, txns:445},
+  {name:'jessepollak', pts:760, txns:380},
+  {name:'nick.eth', pts:580, txns:290},
+  {name:'coinbase', pts:420, txns:210},
+  {name:'you', pts:0, txns:0},
+];
+
+function buildLeaderboard() {
+  const gl = document.getElementById('globalLbList');
+  gl.innerHTML = globalPlayers.map((p, i) => lbRow(p, i)).join('');
+  const rl = document.getElementById('roundLbList');
+  const r = state.rounds[0];
+  const lb = r ? r.leaderboard : [];
+  rl.innerHTML = lb.length ? lb.map((p, i) => lbRow(p, i)).join('') :
+    '<p class="text-muted" style="text-align:center;padding:20px 0">No active round.</p>';
+}
+
+function lbRow(p, i) {
+  const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+  const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1);
+  return `<div class="lb-row">
+    <div class="lb-rank ${rankClass}">${medal}</div>
+    <div class="lb-avatar">${p.name[0].toUpperCase()}</div>
+    <div class="lb-name">${p.name === 'you' ? '<strong>You</strong>' : p.name}</div>
+    <div class="lb-pts">${p.pts} pts</div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════
+//  CHECK-IN
+// ════════════════════════════════════════════
+function buildCheckinDays() {
+  const c = document.getElementById('checkinDays');
+  c.innerHTML = state.checkinDays.map((done, i) => `
+    <div class="day-dot ${done ? 'done' : i === state.checkinDays.filter(Boolean).length ? 'today' : ''}">
+      ${done ? '✓' : i+1}
+    </div>
+  `).join('');
+}
+
+async function doCheckin() {
+  if (state.checkinToday) { showToast("Already checked in today!"); return; }
+  showTxModal('Checking In...', 'Tiny gas fee on Arbitrum');
+  await fakeTx(1000);
+  closeTxModal();
+  const idx = state.checkinDays.findIndex(d => !d);
+  if (idx !== -1) state.checkinDays[idx] = true;
+  state.checkinToday = true;
+  document.getElementById('checkinBtn').innerHTML = '✅ Checked In';
+  document.getElementById('checkinBtn').classList.add('btn-disabled');
+  buildCheckinDays();
+  addPoints(5, 0, 0.0000001); // Gas fee approx
+  showToast('Check-in successful! (Gas fee paid) +5 PTS');
+  if (state.checkinDays.every(Boolean)) showToast('🎉 10-day streak! 5 ARB incoming!');
+}
+
+// ════════════════════════════════════════════
+//  REFERRAL
+// ════════════════════════════════════════════
+function copyRefCode() {
+  navigator.clipboard.writeText(state.refCode).catch(() => {});
+  showToast('Copied: ' + state.refCode);
+}
+
+function shareRef() {
+  const url = `https://warpcast.com/~/compose?text=Join%20TimeBattle%20%E2%9A%A1%20with%20my%20code%20${state.refCode}%20and%20earn%20ARB%20tokens!%20%F0%9F%8E%81`;
+  window.open(url, '_blank');
+}
+
+function applyRefCode() {
+  const code = document.getElementById('enterRefCode').value.trim().toUpperCase();
+  if (!code.startsWith('TB-')) { showToast('Invalid code!'); return; }
+  showToast('Referral Applied! ✅');
+  document.getElementById('enterRefCode').value = '';
+}
+
+// ════════════════════════════════════════════
+//  CLAIM
+// ════════════════════════════════════════════
+async function claimReward() {
+  if (state.claimable <= 0) { showToast('Nothing to claim yet!'); return; }
+  showTxModal('Claiming Reward...', 'Transferring to your wallet on Arbitrum');
+  await fakeTx(1500);
+  closeTxModal();
+  showToast(`Claimed ${state.claimable.toFixed(4)} ETH! 🎉`);
+  state.claimable = 0;
+  document.getElementById('claimable-amt').textContent = '0.00 ETH';
+  state.myRoundsWon++;
+  updateProfileStats();
+}
+
+// ════════════════════════════════════════════
+//  TICKER UPDATE
+// ════════════════════════════════════════════
+function pushToTicker(msg) {
+  const track = document.getElementById('tickerTrack');
+  const item = document.createElement('span');
+  item.className = 'ticker-item';
+  item.innerHTML = msg;
+  track.appendChild(item);
+  track.appendChild(item.cloneNode(true)); // duplicate for seamless scroll
+}
+
+// ════════════════════════════════════════════
+//  UI HELPERS
+// ════════════════════════════════════════════
+function switchPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'lb') buildLeaderboard();
+}
+
+function switchRoundTab(tab, el) {
+  ['live','previous','create'].forEach(t => {
+    const el2 = document.getElementById('tab-' + t);
+    if (el2) el2.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('#page-rounds .section-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function switchLbTab(tab, el) {
+  document.getElementById('lb-global').style.display = tab === 'global' ? 'block' : 'none';
+  document.getElementById('lb-round').style.display = tab === 'round' ? 'block' : 'none';
+  document.querySelectorAll('#page-lb .section-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showTxModal(title, sub) {
+  document.getElementById('txModalTitle').textContent = title;
+  document.getElementById('txModalSub').textContent = sub;
+  openModal('txModal');
+}
+function closeTxModal() { closeModal('txModal'); }
+
+function showSuccessModal(title, msg, pts, hash) {
+  document.getElementById('txSuccessTitle').textContent = title;
+  document.getElementById('txSuccessMsg').textContent = msg;
+  document.getElementById('txSuccessPts').textContent = '+' + pts + ' PTS';
+  document.getElementById('txHash').textContent = 'tx: ' + hash;
+  const icon = pts >= 15 ? '🚀' : pts >= 10 ? '⭐' : '✅';
+  document.getElementById('txSuccessIcon').textContent = icon;
+  openModal('txSuccessModal');
+  pushToTicker(`⚡ <span>You</span> voted ${state.voteDir < 0 ? '-10s' : '+10s'} · +${pts} pts`);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// Fake transaction delay
+function fakeTx(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function genFakeTxHash() {
+  return '0x' + Array.from({length:40},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join('');
+}
+
+// ════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
+```
