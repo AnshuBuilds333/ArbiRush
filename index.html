@@ -2,1776 +2,350 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>TimeBattle — Farcaster MiniApp</title>
-    <meta property="og:title" content="TimeBattle">
-    <meta property="og:image" content="APP_IMAGE_URL">
-    <meta name="fc:frame" content='{"version":"next","imageUrl":"APP_IMAGE_URL","button":{"title":"Launch App","action":{"type":"launch_frame","name":"Mini App","url":"APP_URL","splashImageUrl":"APP_IMAGE_URL","splashBackgroundColor":"#000000"}}}' />
-<meta property="fc:frame" content="vNext">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ArbiRush | Web3 Survival Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <style>
   :root {
-    --bg: #060a12;
-    --surface: #0d1420;
-    --surface2: #131c2e;
-    --border: #1e2d45;
-    --accent: #00d4ff;
-    --accent2: #ff6b35;
-    --accent3: #7cff6b;
-    --gold: #ffd700;
-    --text: #e8f4ff;
-    --muted: #5a7a99;
-    --danger: #ff4444;
-    --paid: #ff6b35;
-    --free: #7cff6b;
+    --primary: #FACC15; /* Vibrant Yellow */
+    --primary-dark: #EAB308;
+    --bg: #0A0A0F;
+    --surface: #13131A;
+    --surface2: #1C1C28;
+    --border: #2A2A3A;
+    --text: #F0F0F8;
+    --muted: #6B6B85;
+    --green: #00E676;
+    --red: #FF4444;
     --radius: 12px;
-    --min-eth: 0.000006538;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   body {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Space Mono', monospace;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    overflow-x: hidden;
     max-width: 430px;
     margin: 0 auto;
+    overflow-x: hidden;
   }
 
-  /* ─── TICKER ─── */
-  .ticker-wrap {
-    width: 100%;
-    background: linear-gradient(90deg, #00d4ff22, #ff6b3522);
-    border-bottom: 1px solid var(--border);
-    overflow: hidden;
-    height: 36px;
+  /* HEADER */
+  .header {
+    padding: 20px 16px;
     display: flex;
     align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .ticker-label {
-    background: var(--accent);
-    color: #000;
-    font-family: 'Space Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 0 10px;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    flex-shrink: 0;
-    letter-spacing: 1px;
-  }
-  .ticker-track {
-    display: flex;
-    animation: ticker 18s linear infinite;
-    white-space: nowrap;
-  }
-  .ticker-item {
-    font-family: 'Space Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    padding: 0 24px;
-    opacity: 0.9;
-  }
-  .ticker-item span { color: var(--accent2); }
-  @keyframes ticker {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-
-  /* ─── NAV ─── */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0; left: 50%;
-    transform: translateX(-50%);
-    width: 100%; max-width: 430px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    display: flex;
-    z-index: 100;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-  .nav-btn {
-    flex: 1;
-    background: none;
-    border: none;
-    color: var(--muted);
-    padding: 10px 4px 8px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    font-family: 'Syne', sans-serif;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    transition: color 0.2s;
-  }
-  .nav-btn.active { color: var(--accent); }
-  .nav-btn svg { width: 20px; height: 20px; }
-
-  /* ─── PAGES ─── */
-  .page { display: none; padding: 12px 14px 90px; }
-  .page.active { display: block; }
-
-  /* ─── CARDS ─── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-  .card-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  /* ─── ROUND CARD ─── */
-  .round-card {
-    background: linear-gradient(135deg, #0d1420 0%, #131c2e 100%);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px;
-    margin-bottom: 14px;
-    position: relative;
-    overflow: hidden;
-  }
-  .round-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-  }
-  .round-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: #00d4ff15;
-    border: 1px solid #00d4ff33;
-    border-radius: 20px;
-    padding: 3px 10px;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 1px;
-    margin-bottom: 10px;
-  }
-  .round-badge.live { background: #ff443315; border-color: #ff443333; color: var(--danger); }
-  .dot-live {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--danger);
-    animation: pulse 1.2s infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
-
-  .round-title {
-    font-size: 18px;
-    font-weight: 800;
-    margin-bottom: 6px;
-    line-height: 1.2;
-  }
-  .round-meta {
-    display: flex;
-    gap: 14px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-    font-size: 12px;
-    color: var(--muted);
-    font-family: 'Space Mono', monospace;
-  }
-  .round-meta strong { color: var(--text); }
-
-  /* ─── TIMER DISPLAY ─── */
-  .timer-display {
-    background: #00000033;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    text-align: center;
-    margin-bottom: 14px;
-  }
-  .timer-digits {
-    font-family: 'Space Mono', monospace;
-    font-size: 36px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 3px;
-    text-shadow: 0 0 20px #00d4ff55;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .timer-digits.urgent { color: var(--danger); text-shadow: 0 0 20px #ff444455; }
-  .timer-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
-
-  /* ─── ACTION BUTTONS ─── */
-  .action-row { display: flex; gap: 10px; margin-bottom: 12px; }
-  .btn {
-    flex: 1;
-    border: none;
-    border-radius: 10px;
-    padding: 13px 10px;
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    letter-spacing: 0.3px;
-  }
-  .btn:active { transform: scale(0.96); }
-  .btn-free {
-    background: linear-gradient(135deg, #1a3a1a, #1f4a1f);
-    border: 1px solid #7cff6b44;
-    color: var(--free);
-  }
-  .btn-free:hover { border-color: var(--free); background: #1f4a1f; }
-  .btn-paid {
-    background: linear-gradient(135deg, #3a1a0a, #4a2010);
-    border: 1px solid #ff6b3544;
-    color: var(--paid);
-  }
-  .btn-paid:hover { border-color: var(--paid); }
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #0099cc);
-    color: #000;
-    font-weight: 800;
-  }
-  .btn-outline {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger { background: linear-gradient(135deg, #3a0a0a, #4a1010); border: 1px solid #ff444444; color: var(--danger); }
-  .btn-gold { background: linear-gradient(135deg, #3a2a00, #4a3800); border: 1px solid #ffd70044; color: var(--gold); }
-  .btn-disabled { opacity: 0.4; pointer-events: none; }
-
-  .btn-time {
-    width: 48%;
-    padding: 11px;
-    font-size: 12px;
-    border-radius: 10px;
-  }
-
-  /* ─── POINTS PILL ─── */
-  .points-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: #ffd70015;
-    border: 1px solid #ffd70033;
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--gold);
-    font-family: 'Space Mono', monospace;
-  }
-
-  /* ─── COOLDOWN BAR ─── */
-  .cooldown-wrap { margin-bottom: 12px; }
-  .cooldown-label {
-    display: flex;
     justify-content: space-between;
-    font-size: 11px;
-    color: var(--muted);
-    margin-bottom: 5px;
-    font-family: 'Space Mono', monospace;
-  }
-  .cooldown-bar {
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .cooldown-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--free), var(--accent));
-    border-radius: 2px;
-    transition: width 1s linear;
-  }
-
-  /* ─── LEADERBOARD ─── */
-  .lb-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0;
     border-bottom: 1px solid var(--border);
+    background: var(--surface);
   }
-  .lb-row:last-child { border-bottom: none; }
-  .lb-rank {
-    font-family: 'Space Mono', monospace;
-    font-size: 13px;
-    font-weight: 700;
-    width: 28px;
-    text-align: center;
-    color: var(--muted);
-  }
-  .lb-rank.gold { color: var(--gold); }
-  .lb-rank.silver { color: #c0c0c0; }
-  .lb-rank.bronze { color: #cd7f32; }
-  .lb-avatar {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 14px; color: #000;
-    flex-shrink: 0;
-  }
-  .lb-name { flex: 1; font-weight: 600; font-size: 14px; }
-  .lb-pts {
-    font-family: 'Space Mono', monospace;
-    font-size: 13px;
-    color: var(--gold);
-    font-weight: 700;
-  }
-
-  /* ─── INPUT ─── */
-  .input-group { margin-bottom: 12px; }
-  .input-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 6px;
-    display: block;
-  }
-  .input-field {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 11px 14px;
-    color: var(--text);
+  .logo {
     font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.2s;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
   }
-  .input-field:focus { border-color: var(--accent); }
-  .input-field::placeholder { color: var(--muted); }
-  select.input-field option { background: var(--surface2); }
-
-  .seg-control {
-    display: flex;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 3px;
-    gap: 3px;
-  }
-  .seg-btn {
-    flex: 1;
-    border: none;
-    background: none;
-    color: var(--muted);
-    padding: 8px;
-    border-radius: 6px;
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .seg-btn.active { background: var(--surface); color: var(--accent); border: 1px solid var(--border); }
-
-  /* ─── PROMO CARD ─── */
-  .promo-card {
-    background: linear-gradient(135deg, #1a0d30, #0d1a30);
-    border: 1px solid #7c6bff33;
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    transition: border-color 0.2s;
-  }
-  .promo-card:hover { border-color: #7c6bff99; }
-  .promo-label { font-size: 10px; letter-spacing: 2px; color: #7c6bff; font-weight: 700; margin-bottom: 6px; }
-  .promo-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-  .promo-url { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--muted); }
-
-  /* ─── SECTION TABS ─── */
-  .section-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-  }
-  .section-tab {
+  .logo span { color: var(--primary); }
+  
+  .wallet-pill {
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 6px 14px;
     font-size: 12px;
-    font-weight: 700;
-    color: var(--muted);
+    font-weight: bold;
+    color: var(--text);
     cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
-    flex-shrink: 0;
+    transition: border-color 0.2s;
   }
-  .section-tab.active {
-    background: #00d4ff15;
-    border-color: var(--accent);
-    color: var(--accent);
+  .wallet-pill:hover { border-color: var(--primary); }
+
+  /* MAIN SCREEN */
+  .screen { padding: 20px 14px; }
+
+  /* GAME CARD */
+  .round-card {
+    background: var(--surface);
+    border: 1px solid var(--primary-dark);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 15px rgba(250, 204, 21, 0.1);
   }
 
-  /* ─── HEADER ─── */
-  .page-header {
+  /* STATS ROW */
+  .reward-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    background: rgba(250, 204, 21, 0.05);
+    border: 1px solid rgba(250, 204, 21, 0.15);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 15px;
   }
-  .page-header h1 {
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-  }
+  .reward-label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+  .reward-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: var(--primary); }
 
-  /* ─── MODAL ─── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: #000000cc;
-    z-index: 200;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s;
-  }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px 20px 0 0;
-    padding: 20px 18px;
-    width: 100%;
-    max-width: 430px;
-    max-height: 90vh;
-    overflow-y: auto;
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-  }
-  .modal-overlay.open .modal { transform: translateY(0); }
-  .modal-handle {
-    width: 36px; height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 0 auto 18px;
-  }
-  .modal-title {
-    font-size: 18px;
-    font-weight: 800;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  /* ─── STAT GRID ─── */
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .stat-box {
+  /* TIMER */
+  .timer-box {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-    text-align: center;
-  }
-  .stat-val {
-    font-family: 'Space Mono', monospace;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--accent);
-    margin-bottom: 3px;
-  }
-  .stat-key { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
-
-  /* ─── REFERRAL ─── */
-  .ref-code-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-  .ref-code {
-    flex: 1;
-    font-family: 'Space Mono', monospace;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 2px;
-  }
-  .copy-btn {
-    background: var(--border);
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: 'Syne', sans-serif;
-    transition: background 0.2s;
-  }
-  .copy-btn:hover { background: var(--accent); color: #000; }
-
-  /* ─── CHECKIN ─── */
-  .checkin-days { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
-  .day-dot {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--muted);
-    position: relative;
-  }
-  .day-dot.done { border-color: var(--free); color: var(--free); background: #7cff6b15; }
-  .day-dot.today { border-color: var(--accent); color: var(--accent); background: #00d4ff15; }
-
-  /* ─── SURPRISE ─── */
-  .surprise-card {
-    background: linear-gradient(135deg, #1a0010, #200020);
-    border: 1px solid #ff00ff33;
-    border-radius: 14px;
+    border-radius: 8px;
     padding: 20px;
     text-align: center;
-    margin-bottom: 12px;
+    margin-bottom: 20px;
   }
-  .surprise-icon { font-size: 40px; margin-bottom: 10px; }
-  .surprise-text { font-size: 14px; color: var(--muted); line-height: 1.5; }
-  .surprise-text strong { color: #ff88ff; }
+  .timer-label { font-size: 12px; color: var(--muted); letter-spacing: 1px; margin-bottom: 5px; }
+  .timer-val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 42px;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 10px rgba(255,255,255,0.2);
+  }
+  .timer-val.danger { color: var(--red); text-shadow: 0 0 10px rgba(255, 68, 68, 0.4); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(0.98); } }
 
-  /* ─── TOAST ─── */
+  /* BUTTONS */
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+  }
+  
+  .btn {
+    padding: 14px 10px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-sub { font-size: 10px; font-weight: 400; font-family: 'Space Mono', monospace; opacity: 0.8; }
+
+  .btn-free {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-free:hover:not(:disabled) { border-color: var(--primary); }
+  .btn-free:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-paid {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #0A0A0F;
+    box-shadow: 0 4px 15px rgba(250, 204, 21, 0.3);
+  }
+  .btn-paid:hover { filter: brightness(1.1); }
+
+  .btn-full {
+    width: 100%;
+    margin-bottom: 10px;
+    font-size: 15px;
+    padding: 16px;
+  }
+
+  .btn-claim {
+    background: var(--green);
+    color: #0A0A0F;
+    display: none; /* Hidden by default */
+  }
+
+  /* COOLDOWN BAR */
+  .cooldown-wrap { margin-top: 5px; width: 80%; display: none; }
+  .cooldown-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+  .cooldown-fill { height: 100%; background: var(--primary); width: 100%; transition: width 1s linear; }
+
+  /* TOAST */
   .toast {
-    position: fixed;
-    top: 50px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-80px);
-    background: var(--surface2);
-    border: 1px solid var(--accent);
-    border-radius: 10px;
-    padding: 10px 20px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--accent);
-    z-index: 300;
-    transition: transform 0.3s;
-    white-space: nowrap;
-    font-family: 'Space Mono', monospace;
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface2); border: 1px solid var(--primary); border-radius: 20px;
+    padding: 12px 24px; font-size: 12px; font-weight: bold; color: var(--primary);
+    z-index: 300; opacity: 0; pointer-events: none; transition: all 0.3s; white-space: nowrap;
   }
-  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* ─── ETH INPUT ─── */
-  .eth-calc {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 12px;
-  }
-  .eth-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .eth-row:last-child { margin-bottom: 0; }
-  .eth-row-label { font-size: 11px; color: var(--muted); flex: 1; }
-  .eth-row-val { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text); }
-  .eth-row-val.accent { color: var(--accent); }
-  .eth-row-val.gold { color: var(--gold); }
-
-  /* ─── MISC ─── */
-  .divider { height: 1px; background: var(--border); margin: 14px 0; }
-  .text-muted { color: var(--muted); font-size: 12px; }
-  .text-accent { color: var(--accent); }
-  .text-paid { color: var(--paid); }
-  .text-free { color: var(--free); }
-  .text-gold { color: var(--gold); }
-  .fw-bold { font-weight: 700; }
-  .mt-8 { margin-top: 8px; }
-  .mb-8 { margin-bottom: 8px; }
-  .flex-between { display: flex; justify-content: space-between; align-items: center; }
-  .tag {
-    display: inline-block;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 2px 8px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    color: var(--muted);
-  }
-  .spinner {
-    display: inline-block;
-    width: 16px; height: 16px;
-    border: 2px solid transparent;
-    border-top-color: currentColor;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-    vertical-align: middle;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .reward-pool-badge {
-    background: linear-gradient(135deg, #2a1a00, #3a2800);
-    border: 1px solid #ffd70033;
-    border-radius: 10px;
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-  .reward-icon { font-size: 24px; }
-  .reward-info { flex: 1; }
-  .reward-label { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 2px; }
-  .reward-val { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--gold); }
-
-  /* Recent txns */
-  .txn-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 12px;
-  }
-  .txn-row:last-child { border-bottom: none; }
-  .txn-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--accent2), var(--accent)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #000; flex-shrink: 0; }
-  .txn-name { flex: 1; font-weight: 600; }
-  .txn-type-free { color: var(--free); font-size: 10px; font-weight: 700; }
-  .txn-type-paid { color: var(--paid); font-size: 10px; font-weight: 700; }
-  .txn-pts { font-family: 'Space Mono', monospace; color: var(--gold); font-size: 11px; }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
-
-    <script type="module">
-        import sdk from 'https://esm.sh/@farcaster/frame-sdk';
-        window.fcSdk = sdk; 
-        
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                try {
-                    if (window.fcSdk && window.fcSdk.actions) {
-                        window.fcSdk.actions.ready(); 
-                        window.fcSdk.context.then(async context => {
-                            if (context && context.user) {
-                                window.fcUsername = context.user.username || null;
-                                console.log("Connected Farcaster User:", window.fcUsername);
-                            }
-                        }).catch((e)=>{ console.log("No FC context found", e); });
-                    }
-                } catch (e) { console.error("SDK Ready Error:", e); }
-            }, 300);
-        });
-    </script>
 </head>
 <body>
 
-<div class="ticker-wrap">
-  <div class="ticker-label">⚡ LIVE</div>
-  <div style="overflow:hidden;flex:1">
-    <div class="ticker-track" id="tickerTrack">
-      <span class="ticker-item">🔵 <span>vitalik.eth</span> voted -10s FREE</span>
-      <span class="ticker-item">🟠 <span>dwr.eth</span> voted +10s PAID ×2.3</span>
-      <span class="ticker-item">🟢 <span>jessepollak</span> voted -10s FREE</span>
-      <span class="ticker-item">🔴 <span>harikaran</span> voted +10s PAID ×1.8</span>
-      <span class="ticker-item">🔵 <span>coinbase</span> voted -10s FREE</span>
-      <span class="ticker-item">🟠 <span>nick.eth</span> voted +10s PAID ×3.1</span>
-      <span class="ticker-item">🔵 <span>vitalik.eth</span> voted -10s FREE</span>
-      <span class="ticker-item">🟠 <span>dwr.eth</span> voted +10s PAID ×2.3</span>
-      <span class="ticker-item">🟢 <span>jessepollak</span> voted -10s FREE</span>
-      <span class="ticker-item">🔴 <span>harikaran</span> voted +10s PAID ×1.8</span>
-      <span class="ticker-item">🔵 <span>coinbase</span> voted -10s FREE</span>
-      <span class="ticker-item">🟠 <span>nick.eth</span> voted +10s PAID ×3.1</span>
-    </div>
-  </div>
+<div class="header">
+  <div class="logo">Arbi<span>Rush</span></div>
+  <button class="wallet-pill" id="connectWalletBtn" onclick="connectWallet()">Connect Wallet</button>
 </div>
 
-<div class="page active" id="page-rounds">
+<div class="screen active">
 
-  <div class="page-header" style="margin-top:14px">
-    <h1>TimeBattle ⚡</h1>
-    <div class="points-pill">🏅 <span id="myTotalPts">0</span> PTS</div>
-  </div>
-
-  <div class="section-tabs">
-    <div class="section-tab active" onclick="switchRoundTab('live',this)">🔴 Live</div>
-    <div class="section-tab" onclick="switchRoundTab('previous',this)">📜 Previous</div>
-    <div class="section-tab" onclick="switchRoundTab('create',this)">＋ Create</div>
-  </div>
-
-  <div id="tab-live">
-    <div id="liveRoundsContainer"></div>
-  </div>
-
-  <div id="tab-previous" style="display:none">
-    <div id="prevRoundsContainer">
-        <div style="text-align:center;padding:40px 0;color:var(--muted)">No previous rounds yet.</div>
+  <div class="round-card">
+    
+    <div class="reward-row">
+      <div>
+        <div class="reward-label">Reward Pool</div>
+        <div class="reward-val" id="rewardPoolUi">0.000 ETH</div>
+      </div>
+      <div style="text-align:right">
+        <div class="reward-label">Current Leader</div>
+        <div class="reward-val" style="font-size:14px; color:var(--text);" id="currentLeaderUi">0x000...000</div>
+      </div>
     </div>
-  </div>
 
-  <div id="tab-create" style="display:none">
-    <div class="card">
-      <div class="card-title">🛡 Create New Round</div>
+    <div class="timer-box">
+      <div class="timer-label">🔴 GAME ENDS IN</div>
+      <div class="timer-val" id="countdownTimer">00:00:00</div>
+    </div>
 
-      <div class="input-group">
-        <label class="input-label">Round Name</label>
-        <input class="input-field" id="cr-name" placeholder="e.g. Alpha War #1" maxlength="40">
-      </div>
-
-      <div class="input-group">
-        <label class="input-label">Round Duration</label>
-        <div class="seg-control" id="cr-duration-seg">
-          <button class="seg-btn active" onclick="selectDuration(1,this)">1h</button>
-          <button class="seg-btn" onclick="selectDuration(2,this)">2h</button>
-          <button class="seg-btn" onclick="selectDuration(6,this)">6h</button>
-          <button class="seg-btn" onclick="selectDuration(12,this)">12h</button>
-          <button class="seg-btn" onclick="selectDuration(24,this)">24h</button>
+    <div class="action-row" id="activeGameButtons">
+      
+      <button class="btn btn-free" id="btnFreePush" onclick="handleFreePush()">
+        🆓 FREE PUSH
+        <span class="btn-sub" id="freeSubText">Subject to cooldown</span>
+        
+        <div class="cooldown-wrap" id="cooldownWrap">
+            <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill"></div></div>
         </div>
-      </div>
-
-      <div class="input-group">
-        <label class="input-label">Custom Duration (1–24 hours)</label>
-        <input class="input-field" id="cr-custom-hours" type="number" min="1" max="24" placeholder="Enter hours (1-24)" oninput="customDurationInput(this)">
-      </div>
-
-      <div class="input-group">
-        <label class="input-label">Free Vote Cooldown</label>
-        <div class="seg-control">
-          <button class="seg-btn active" onclick="selectCooldown(30,this)">30 min</button>
-          <button class="seg-btn" onclick="selectCooldown(15,this)">15 min</button>
-          <button class="seg-btn" onclick="selectCooldown(10,this)">10 min</button>
-          <button class="seg-btn" onclick="selectCooldown(5,this)">5 min</button>
-        </div>
-      </div>
-
-      <div class="input-group">
-        <label class="input-label">Custom Cooldown (minutes)</label>
-        <input class="input-field" id="cr-custom-cooldown" type="number" min="1" placeholder="Enter minutes" oninput="customCooldownInput(this)">
-      </div>
-
-      <div class="input-group">
-        <label class="input-label">Reward Pool (ETH)</label>
-        <input class="input-field" id="cr-reward" type="number" step="0.001" min="0.001" placeholder="0.01" oninput="updateCreateDeposit()">
-      </div>
-
-      <div class="input-group">
-        <label class="input-label">Reward Token</label>
-        <select class="input-field" id="cr-token">
-          <option value="ETH">ETH (0x00...)</option>
-        </select>
-      </div>
-
-      <div class="input-group">
-        <label class="input-label">Promotion Link (optional)</label>
-        <input class="input-field" id="cr-promo-url" type="url" placeholder="https://warpcast.com/yourprofile">
-      </div>
-
-      <div class="input-group">
-        <label class="input-label">Promotion Label (optional)</label>
-        <input class="input-field" id="cr-promo-label" placeholder="Follow my Warpcast!">
-      </div>
-
-      <div class="eth-calc">
-        <div class="flex-between mb-8">
-          <span class="text-muted">Platform deposit</span>
-          <span class="eth-row-val accent" id="cr-deposit-val">— ETH</span>
-        </div>
-        <div class="flex-between">
-          <span class="text-muted">Min paid vote</span>
-          <span class="eth-row-val">0.000006538 ETH</span>
-        </div>
-      </div>
-
-      <button class="btn btn-primary" onclick="openCreateConfirm()" style="width:100%;border-radius:10px;padding:14px">
-        🚀 Pay & Create Round
       </button>
-    </div>
-  </div>
-</div>
 
-<div class="page" id="page-lb">
-  <div class="page-header" style="margin-top:14px">
-    <h1>Leaderboard 🏆</h1>
-  </div>
-  <div class="section-tabs">
-    <div class="section-tab active" onclick="switchLbTab('global',this)">🌐 Global</div>
-    <div class="section-tab" onclick="switchLbTab('round',this)">🎯 This Round</div>
-  </div>
-
-  <div id="lb-global">
-    <div class="card" style="padding:8px 14px" id="globalLbList"></div>
-  </div>
-  <div id="lb-round" style="display:none">
-    <div class="card" style="padding:8px 14px" id="roundLbList"></div>
-  </div>
-
-  <div class="surprise-card">
-    <div class="surprise-icon">🎁</div>
-    <div class="surprise-text">
-      <strong>SURPRISE REWARD</strong><br>
-      Special bonus for top performers revealed when the round ends. Keep earning points — something big is coming! 👀
-    </div>
-  </div>
-</div>
-
-<div class="page" id="page-profile">
-  <div class="page-header" style="margin-top:14px">
-    <h1>My Profile 👤</h1>
-  </div>
-
-  <div class="stat-grid">
-    <div class="stat-box">
-      <div class="stat-val" id="prof-total-pts">0</div>
-      <div class="stat-key">Total Points</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-val" id="prof-total-txns">0</div>
-      <div class="stat-key">Transactions</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-val" id="prof-rounds-won">0</div>
-      <div class="stat-key">Rounds Won</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-val" id="prof-eth-spent">0</div>
-      <div class="stat-key">ETH Spent</div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">💰 Claimable Rewards</div>
-    <div class="reward-pool-badge">
-      <div class="reward-icon">💎</div>
-      <div class="reward-info">
-        <div class="reward-label">Pending Claim</div>
-        <div class="reward-val" id="claimable-amt">0.00 ETH</div>
-      </div>
-    </div>
-    <p class="text-muted" style="margin-bottom:10px; font-size:12px">Enter the Round ID below to claim your reward if you are the highest scorer.</p>
-    <div style="display:flex; gap:10px; margin-bottom:12px;">
-        <input type="number" id="claim-round-id" class="input-field" placeholder="Round ID" style="flex:1">
-        <button class="btn btn-gold" style="flex:0;width:auto;padding:10px 16px;font-size:12px" onclick="claimReward()">CLAIM</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📅 Daily Check-In</div>
-    <div class="checkin-days" id="checkinDays"></div>
-    <button class="btn btn-free" id="checkinBtn" onclick="doCheckin()" style="width:100%;border-radius:10px;padding:12px">
-      Claim Daily +5 PTS (Gas Only)
-    </button>
-  </div>
-</div>
-
-<div class="page" id="page-refer">
-  <div class="page-header" style="margin-top:14px">
-    <h1>Refer & Earn 🔗</h1>
-  </div>
-
-  <div class="card">
-    <div class="card-title">🎁 How It Works</div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px">
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">1</div>
-        <p class="text-muted">Share your referral code with a friend.</p>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">2</div>
-        <p class="text-muted">Friend joins TimeBattle & completes <strong>10-day check-in streak</strong>.</p>
-      </div>
-      <div style="display:flex;gap:12px;align-items:flex-start">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">3</div>
-        <p class="text-muted">You receive <strong style="color:var(--accent3)">5 ARB tokens</strong> automatically! 🎉</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">🔑 Your Referral Code</div>
-    <div class="ref-code-box">
-      <div class="ref-code" id="myRefCode">TB-XXXX</div>
-      <button class="copy-btn" onclick="copyRefCode()">COPY</button>
-    </div>
-    <button class="btn btn-primary" style="width:100%;border-radius:10px;padding:13px" onclick="shareRef()">
-      📤 Share on Warpcast
-    </button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">👥 Your Referrals</div>
-    <div id="refList">
-      <p class="text-muted" style="text-align:center;padding:20px 0">No referrals yet. Share your code!</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">🎟 Enter Referral Code (Network Call)</div>
-    <div style="display:flex;gap:8px">
-      <input class="input-field" id="enterRefCode" placeholder="0x..." style="flex:1">
-      <button class="btn btn-outline" style="flex:0;width:auto;padding:11px 16px;font-size:13px;border-radius:8px" onclick="applyRefCode()">APPLY</button>
-    </div>
-  </div>
-</div>
-
-<nav class="bottom-nav">
-  <button class="nav-btn active" onclick="switchPage('rounds',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    Rounds
-  </button>
-  <button class="nav-btn" onclick="switchPage('lb',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Leaderboard
-  </button>
-  <button class="nav-btn" onclick="switchPage('profile',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    Profile
-  </button>
-  <button class="nav-btn" onclick="switchPage('refer',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    Refer
-  </button>
-</nav>
-
-<div class="modal-overlay" id="voteModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">⚡ Cast Your Vote</div>
-
-    <div class="card" style="margin-bottom:12px">
-      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Active Round</div>
-      <div style="font-size:16px;font-weight:700" id="vote-round-name">—</div>
-      <div class="timer-display" style="margin-top:12px;margin-bottom:0">
-        <div class="timer-digits" id="vote-timer">00:00:00</div>
-        <div class="timer-label">REMAINING</div>
-      </div>
-    </div>
-
-    <div id="vote-promo-section" style="display:none">
-      <div class="promo-card" id="vote-promo-card" onclick="openPromoLink()">
-        <div class="promo-label">📢 CREATOR PROMO</div>
-        <div class="promo-title" id="vote-promo-title">—</div>
-        <div class="promo-url" id="vote-promo-url">—</div>
-      </div>
-    </div>
-
-    <div class="input-group">
-      <label class="input-label">Vote Direction</label>
-      <div class="seg-control">
-        <button class="seg-btn active" onclick="selectVoteDir(-1,this)">⬇ −10 sec</button>
-        <button class="seg-btn" onclick="selectVoteDir(1,this)">⬆ +10 sec</button>
-      </div>
-    </div>
-
-    <div class="card" style="border-color:#7cff6b33;margin-bottom:10px">
-      <div class="flex-between mb-8">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--free)">🟢 FREE Vote</div>
-          <div class="text-muted" style="font-size:11px;margin-top:2px">+2 points · Only Arbitrum gas</div>
-        </div>
-        <div class="points-pill" style="background:#7cff6b15;border-color:#7cff6b33;color:var(--free)">+2 PTS</div>
-      </div>
-      <div class="cooldown-wrap">
-        <div class="cooldown-label">
-          <span>Cooldown</span>
-          <span id="cooldown-timer-display">Ready!</span>
-        </div>
-        <div class="cooldown-bar"><div class="cooldown-fill" id="cooldownFill" style="width:100%"></div></div>
-      </div>
-      <button class="btn btn-free" id="freeVoteBtn" onclick="doFreeVote()" style="width:100%;border-radius:10px;padding:13px">
-        ✅ Vote FREE (gas only)
+      <button class="btn btn-paid" id="btnPaidRush" onclick="handlePaidRush()">
+        💰 PAID RUSH
+        <span class="btn-sub">0.0003 ETH</span>
       </button>
+
     </div>
 
-    <div class="card" style="border-color:#ff6b3533">
-      <div class="flex-between mb-8">
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--paid)">🔥 PAID Vote</div>
-          <div class="text-muted" style="font-size:11px;margin-top:2px">Unlimited · Bonus time & points</div>
-        </div>
-      </div>
-      <div class="eth-calc">
-        <div class="eth-row">
-          <span class="eth-row-label">ETH Amount</span>
-        </div>
-        <input class="input-field" id="paid-eth-input" type="number" step="0.000001" min="0.000006538" value="0.000006538" oninput="calcPaidVote(this)" style="margin-bottom:10px">
-        <div class="eth-row">
-          <span class="eth-row-label">Multiplier</span>
-          <span class="eth-row-val accent" id="paid-multiplier">1.0×</span>
-        </div>
-        <div class="eth-row">
-          <span class="eth-row-label">Time Change</span>
-          <span class="eth-row-val" id="paid-time-change">±10 sec</span>
-        </div>
-        <div class="eth-row">
-          <span class="eth-row-label">Points Earned</span>
-          <span class="eth-row-val gold" id="paid-points">2 pts</span>
-        </div>
-      </div>
-      <button class="btn btn-paid" onclick="doPaidVote()" style="width:100%;border-radius:10px;padding:13px">
-        💸 Vote PAID (Arbitrum)
-      </button>
-    </div>
-
-    <button class="btn btn-outline" onclick="closeModal('voteModal')" style="width:100%;margin-top:10px;border-radius:10px;padding:12px">
-      Close
+    <button class="btn btn-full btn-free" style="border-color: var(--primary); color: var(--primary);" id="btnStartGame" onclick="handleStartGame()">
+      🚀 START NEW ROUND
+      <span class="btn-sub">Requires 0.000363 ETH</span>
     </button>
+
+    <button class="btn btn-full btn-claim" id="btnClaimReward" onclick="handleClaimReward()">
+      🏆 CLAIM REWARD POOL
+      <span class="btn-sub">Timer has ended!</span>
+    </button>
+
   </div>
+
 </div>
 
-<div class="modal-overlay" id="createConfirmModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">🚀 Confirm Round Creation</div>
-    <div id="createConfirmBody"></div>
-    <button class="btn btn-primary" onclick="confirmCreateRound()" style="width:100%;border-radius:10px;padding:14px;margin-bottom:10px">
-      💳 Pay & Launch Round
-    </button>
-    <button class="btn btn-outline" onclick="closeModal('createConfirmModal')" style="width:100%;border-radius:10px;padding:12px">
-      Cancel
-    </button>
-  </div>
-</div>
-
-<div class="modal-overlay" id="txModal">
-  <div class="modal" style="text-align:center;padding:32px 20px">
-    <div class="modal-handle"></div>
-    <div style="font-size:48px;margin-bottom:16px">⚡</div>
-    <div style="font-size:18px;font-weight:800;margin-bottom:8px" id="txModalTitle">Processing...</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:20px" id="txModalSub">Confirming transaction on Arbitrum</div>
-    <div style="display:flex;justify-content:center"><div class="spinner" style="width:32px;height:32px;border-width:3px;color:var(--accent)"></div></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="txSuccessModal">
-  <div class="modal" style="text-align:center;padding:32px 20px">
-    <div class="modal-handle"></div>
-    <div style="font-size:48px;margin-bottom:14px" id="txSuccessIcon">✅</div>
-    <div style="font-size:20px;font-weight:800;margin-bottom:8px" id="txSuccessTitle">Success!</div>
-    <div style="font-size:14px;color:var(--muted);margin-bottom:6px" id="txSuccessMsg">—</div>
-    <div class="points-pill" style="margin:14px auto;display:inline-flex" id="txSuccessPts">+0 PTS</div>
-    <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:20px" id="txHash">tx: 0x…</div>
-    <button class="btn btn-primary" onclick="closeModal('txSuccessModal')" style="width:100%;border-radius:10px;padding:13px">
-      Continue
-    </button>
-  </div>
-</div>
-
-<div class="modal-overlay" id="roundEndModal">
-  <div class="modal" style="text-align:center;padding:28px 20px">
-    <div class="modal-handle"></div>
-    <div style="font-size:42px;margin-bottom:12px">🏆</div>
-    <div style="font-size:20px;font-weight:800;margin-bottom:6px">Round Ended!</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:16px" id="roundEndMsg">—</div>
-    <div id="roundEndWinner" style="margin-bottom:16px"></div>
-    <button class="btn btn-gold" onclick="goClaimRewards()" style="width:100%;border-radius:10px;padding:13px;margin-bottom:8px">
-      🎁 Go to Profile & Claim
-    </button>
-    <button class="btn btn-outline" onclick="closeModal('roundEndModal')" style="width:100%;border-radius:10px;padding:12px">
-      Close
-    </button>
-  </div>
-</div>
-
-<div class="toast" id="toast">Message!</div>
+<div class="toast" id="toastBox">Message here</div>
 
 <script>
-// ════════════════════════════════════════════
-//  WEB3 INTEGRATION (ETHERS.JS) & CONTRACT 
-// ════════════════════════════════════════════
-const CONTRACT_ADDRESS = "0x045f64d06B2e6b35B5A16A8ac65F5155a9D16e02";
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const MIN_ETH = 0.000006538;
-
-const CONTRACT_ABI = [
-    "function createRound(string name, uint40 durationInSeconds, uint16 freeVoteCooldownMins, address rewardToken, uint256 rewardAmount) payable",
-    "function voteFree(uint256 roundId, int8 direction)",
-    "function votePaid(uint256 roundId, int8 direction) payable",
-    "function claimReward(uint256 roundId)",
-    "function checkIn()",
-    "function applyReferral(address referrer)",
-    "function platformFee() view returns (uint256)",
-    "function MIN_FEE() view returns (uint256)",
-    "function roundCount() view returns (uint256)",
-    "function rounds(uint256) view returns (address rewardToken, uint40 endTime, uint16 freeVoteCooldownMins, address highestScorer, uint32 highestScore, bool claimed, uint256 rewardAmount)",
-    "function lastFreeVote(uint256, address) view returns (uint40)",
-    "function roundScores(uint256, address) view returns (uint32)",
-    "event RoundCreated(uint256 indexed roundId, string name, address creator, uint40 endTime, address rewardToken, uint256 rewardAmount)"
-];
-
-let provider;
-let signer;
-let contract;
-
-async function connectWallet() {
-    if (typeof window.ethereum !== 'undefined') {
-        provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
-        contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-        return true;
-    } else {
-        showToast("Web3 wallet not found. Please install MetaMask or open in Farcaster Frame.");
-        return false;
-    }
-}
-
-// ════════════════════════════════════════════
-//  STATE & PURE UI LOGIC
-// ════════════════════════════════════════════
-const state = {
-  myPoints: 0,
-  myTxns: 0,
-  myEthSpent: 0,
-  myRoundsWon: 0,
-  claimable: 0,
-  refCode: 'TB-' + Math.random().toString(36).slice(2,6).toUpperCase(),
-  checkinDays: new Array(10).fill(false),
-  checkinToday: false,
-  cooldownRemaining: 0,
-  cooldownTotal: 30 * 60,
-  activeRoundId: null,
-  activeRoundName: null,
-  activeRoundEndTime: 0,
-  voteDir: -1,
+  /* ========================================================
+     ARBIRUSH - SMART CONTRACT LOGIC SKELETON
+     ======================================================== */
   
-  createDuration: 1,
-  createCooldown: 30,
+  const CONTRACT_ADDRESS = "0xA488B67f4B1e12d4BdE4DA16C85dD7C0DD951947";
   
-  roundsData: [] // Stores fetched smart contract data
-};
-
-function init() {
-  document.getElementById('myRefCode').textContent = state.refCode;
-  buildCheckinDays();
-  buildLeaderboard();
-  setInterval(tickTimers, 1000);
-  setInterval(tickCooldown, 1000);
-  updateProfileStats();
-
-  // Try to pre-fetch read-only data if wallet is already available
-  setTimeout(async () => {
-     if(typeof window.ethereum !== 'undefined') {
-         provider = new ethers.BrowserProvider(window.ethereum);
-         contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-         await fetchRounds();
-     }
-  }, 1000);
-}
-
-// ════════════════════════════════════════════
-//  CONTRACT READ & RENDER
-// ════════════════════════════════════════════
-async function fetchRounds() {
-    if (!contract) return;
-    try {
-        const count = await contract.roundCount();
-        const container = document.getElementById('liveRoundsContainer');
-        container.innerHTML = '';
-        state.roundsData = [];
-        
-        if (count == 0) {
-            container.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--muted)">No live rounds.<br>Create one! 🚀</div>`;
-            return;
-        }
-
-        for (let i = 1; i <= Number(count); i++) {
-            const rData = await contract.rounds(i);
-            const endTime = Number(rData.endTime);
-            const currentTime = Math.floor(Date.now() / 1000);
-            const remainingSec = Math.max(0, endTime - currentTime);
-            const isLive = remainingSec > 0;
-            
-            // Save to state for timers
-            state.roundsData.push({
-                id: i,
-                endTime: endTime,
-                remainingSec: remainingSec,
-                cooldownMin: Number(rData.freeVoteCooldownMins),
-                highestScore: Number(rData.highestScore),
-                highestScorer: rData.highestScorer,
-                rewardAmt: ethers.formatEther(rData.rewardAmount)
-            });
-            
-            const h = Math.floor(remainingSec / 3600);
-            const m = Math.floor((remainingSec % 3600) / 60);
-            const s = remainingSec % 60;
-            const timeStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
-            const urgent = remainingSec > 0 && remainingSec < 300;
-            
-            const div = document.createElement('div');
-            div.className = 'round-card';
-            div.innerHTML = `
-              <div class="round-badge ${isLive ? 'live' : ''}">${isLive ? '<div class="dot-live"></div> LIVE' : 'ENDED'}</div>
-              <div class="round-title">Round #${i}</div>
-              <div class="round-meta">
-                <span>Highest Score: <strong>${Number(rData.highestScore)}</strong></span>
-                <span>Scorer: <strong>${rData.highestScorer.slice(0,6)}...${rData.highestScorer.slice(-4)}</strong></span>
-              </div>
-              <div class="timer-display">
-                <div class="timer-digits ${urgent ? 'urgent' : ''}" id="td-${i}">${timeStr}</div>
-                <div class="timer-label">TIME REMAINING</div>
-              </div>
-              <div class="reward-pool-badge">
-                  <div class="reward-info">
-                    <div class="reward-label">Reward Pool</div>
-                    <div class="reward-val">${ethers.formatEther(rData.rewardAmount)} ETH</div>
-                  </div>
-              </div>
-              ${isLive ? `
-              <div class="action-row">
-                <button class="btn btn-free btn-time" onclick="openVoteModal(${i}, 'Round #${i}', ${rData.freeVoteCooldownMins}, ${endTime})">🟢 Vote FREE</button>
-                <button class="btn btn-paid btn-time" onclick="openVoteModal(${i}, 'Round #${i}', ${rData.freeVoteCooldownMins}, ${endTime})">🔥 Vote PAID</button>
-              </div>` : '<div class="text-muted" style="text-align:center;margin-top:10px">Ended. Winner claim in Profile.</div>'}
-            `;
-            container.appendChild(div);
-        }
-    } catch (err) {
-        console.error("Error fetching rounds", err);
-    }
-}
-
-// ════════════════════════════════════════════
-//  TIMERS & CALCS
-// ════════════════════════════════════════════
-function tickTimers() {
-  const currentTime = Math.floor(Date.now() / 1000);
-  
-  state.roundsData.forEach(r => {
-    const remainingSec = Math.max(0, r.endTime - currentTime);
-    
-    // Check if it just ended
-    if (r.remainingSec > 0 && remainingSec === 0) {
-        document.getElementById('roundEndMsg').textContent = `Round #${r.id} has ended!`;
-        document.getElementById('roundEndWinner').innerHTML = `
-          <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Winner</div>
-          <div style="font-size:18px;font-weight:800;color:var(--gold)">🏆 ${r.highestScorer}</div>
-          <div style="font-size:13px;color:var(--muted)">${r.highestScore} points</div>
-        `;
-        openModal('roundEndModal');
-    }
-    
-    r.remainingSec = remainingSec;
-    
-    const el = document.getElementById(`td-${r.id}`);
-    if (el) {
-      const h = Math.floor(remainingSec / 3600);
-      const m = Math.floor((remainingSec % 3600) / 60);
-      const s = remainingSec % 60;
-      el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-      if (remainingSec < 300 && remainingSec > 0) el.classList.add('urgent');
-      else el.classList.remove('urgent');
-    }
-    
-    // Update active vote modal timer
-    if (state.activeRoundId === r.id) {
-      const vt = document.getElementById('vote-timer');
-      if (vt) {
-        const h = Math.floor(remainingSec / 3600);
-        const m = Math.floor((remainingSec % 3600) / 60);
-        const s = remainingSec % 60;
-        vt.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-      }
-    }
-  });
-}
-
-function tickCooldown() {
-  if (state.cooldownRemaining > 0) {
-    state.cooldownRemaining--;
-    updateCooldownUI();
+  // TOAST NOTIFICATION FUNCTION
+  function showToast(msg) {
+    const toast = document.getElementById('toastBox');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
   }
-}
 
-function updateCooldownUI() {
-  const rem = state.cooldownRemaining;
-  const total = state.cooldownTotal;
-  const pct = total > 0 ? ((total - rem) / total) * 100 : 100;
-  const fill = document.getElementById('cooldownFill');
-  const label = document.getElementById('cooldown-timer-display');
-  const btn = document.getElementById('freeVoteBtn');
-  if (fill) fill.style.width = pct + '%';
-  if (label) label.textContent = rem > 0 ? formatTime(rem) : 'Ready!';
-  if (btn) {
-    if (rem > 0) {
-      btn.classList.add('btn-disabled');
-      btn.innerHTML = `⏳ Cooldown ${formatTime(rem)}`;
-    } else {
-      btn.classList.remove('btn-disabled');
-      btn.innerHTML = '✅ Vote FREE (gas only)';
-    }
+  // DUMMY WALLET CONNECT
+  function connectWallet() {
+    // Here goes actual window.ethereum request logic
+    document.getElementById('connectWalletBtn').textContent = "0x123...ABCD";
+    document.getElementById('connectWalletBtn').style.borderColor = "var(--green)";
+    document.getElementById('connectWalletBtn').style.color = "var(--green)";
+    showToast("✅ Wallet Connected!");
   }
-}
 
-function formatTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${pad(m)}:${pad(s)}`;
-}
-function pad(n) { return String(n).padStart(2,'0'); }
-
-// ════════════════════════════════════════════
-//  CREATE ROUND LOGIC
-// ════════════════════════════════════════════
-function selectDuration(h, el) {
-  state.createDuration = h;
-  el.closest('.seg-control').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('cr-custom-hours').value = '';
-  updateCreateDeposit();
-}
-function customDurationInput(el) {
-  const v = Math.min(24, Math.max(1, parseInt(el.value) || 1));
-  state.createDuration = v;
-  el.closest('.card').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-  updateCreateDeposit();
-}
-function selectCooldown(m, el) {
-  state.createCooldown = m;
-  el.closest('.seg-control').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('cr-custom-cooldown').value = '';
-}
-function customCooldownInput(el) {
-  state.createCooldown = Math.max(1, parseInt(el.value) || 30);
-  el.closest('.card').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-}
-function updateCreateDeposit() {
-  const reward = parseFloat(document.getElementById('cr-reward')?.value) || 0;
-  const deposit = (reward + 0.0005).toFixed(6); // 0.0005 platform fee
-  document.getElementById('cr-deposit-val').textContent = deposit + ' ETH';
-}
-
-function openCreateConfirm() {
-  const name = document.getElementById('cr-name').value.trim();
-  const reward = document.getElementById('cr-reward').value;
-  const token = document.getElementById('cr-token').value;
-  
-  if (!name) { showToast('Enter a round name!'); return; }
-  if (!reward) { showToast('Enter reward amount!'); return; }
-
-  const deposit = (parseFloat(reward) + 0.0005).toFixed(6);
-  document.getElementById('createConfirmBody').innerHTML = `
-    <div class="card" style="margin-bottom:14px">
-      <div class="flex-between mb-8"><span class="text-muted">Round Name</span><span class="fw-bold">${name}</span></div>
-      <div class="flex-between mb-8"><span class="text-muted">Duration</span><span class="fw-bold">${state.createDuration}h</span></div>
-      <div class="flex-between mb-8"><span class="text-muted">Free Cooldown</span><span class="fw-bold">${state.createCooldown} min</span></div>
-      <div class="flex-between mb-8"><span class="text-muted">Reward Pool</span><span class="fw-bold text-gold">${reward} ${token}</span></div>
-      <div class="divider"></div>
-      <div class="flex-between"><span class="text-muted">You Pay</span><span style="font-size:16px;font-weight:800;color:var(--accent)">${deposit} ETH</span></div>
-    </div>
-  `;
-  openModal('createConfirmModal');
-}
-
-async function confirmCreateRound() {
-    if(!await connectWallet()) return;
+  // 1. FREE PUSH LOGIC (Simulating Cooldown)
+  function handleFreePush() {
+    showToast("⏳ Free Transaction Sent...");
     
-    const name = document.getElementById('cr-name').value;
-    const rewardEth = document.getElementById('cr-reward').value;
-
-    const durationSec = parseInt(state.createDuration) * 3600;
-    const cooldownMins = state.createCooldown;
-    const rewardWei = ethers.parseEther(rewardEth.toString());
+    // Disable Button
+    const btn = document.getElementById('btnFreePush');
+    btn.disabled = true;
     
-    closeModal('createConfirmModal');
-    try {
-        const fee = await contract.platformFee();
-        const totalValue = fee + rewardWei;
+    // UI Cooldown logic
+    document.getElementById('freeSubText').textContent = "Cooling down...";
+    document.getElementById('cooldownWrap').style.display = "block";
+    const fill = document.getElementById('cooldownFill');
+    
+    // Dummy 10 sec visual cooldown (Replace with actual contract COOLING_PERIOD)
+    fill.style.width = "100%";
+    setTimeout(() => { fill.style.width = "0%"; }, 100);
 
-        showTxModal('Creating Round...', 'Confirm in wallet');
-        const tx = await contract.createRound(
-            name,
-            durationSec,
-            cooldownMins,
-            ZERO_ADDRESS,
-            rewardWei,
-            { value: totalValue }
-        );
-        
-        document.getElementById('txModalSub').textContent = "Waiting for confirmation...";
-        const receipt = await tx.wait();
-        
-        closeTxModal();
-        showSuccessModal("Round Created! 🚀", "Successfully launched on Arbitrum.", 0, receipt.hash);
-        document.getElementById('cr-name').value = '';
-        document.getElementById('cr-reward').value = '';
-        fetchRounds();
-        switchRoundTab('live', document.querySelector('.section-tab'));
-    } catch (e) {
-        closeTxModal();
-        console.error(e);
-        showToast("Transaction Failed / Rejected");
-    }
-}
-
-// ════════════════════════════════════════════
-//  VOTING LOGIC
-// ════════════════════════════════════════════
-async function openVoteModal(roundId, rName, cooldownMins, endTime) {
-  state.activeRoundId = roundId;
-  state.activeRoundName = rName;
-  state.cooldownTotal = cooldownMins * 60;
-  
-  document.getElementById('vote-round-name').textContent = rName;
-  
-  if(contract && signer) {
-      // Fetch user's last free vote for cooldown calculation
-      try {
-          const userAddr = await signer.getAddress();
-          const lastVoteTs = Number(await contract.lastFreeVote(roundId, userAddr));
-          const currentTime = Math.floor(Date.now() / 1000);
-          
-          if(lastVoteTs > 0) {
-              const nextAvailable = lastVoteTs + state.cooldownTotal;
-              const remaining = nextAvailable - currentTime;
-              if (remaining > 0) {
-                  state.cooldownRemaining = remaining;
-              } else {
-                  state.cooldownRemaining = 0;
-              }
-          } else {
-              state.cooldownRemaining = 0;
-          }
-      } catch(e) { console.log(e); state.cooldownRemaining = 0; }
-  } else {
-      state.cooldownRemaining = 0;
+    setTimeout(() => {
+        btn.disabled = false;
+        document.getElementById('freeSubText').textContent = "Ready!";
+        document.getElementById('cooldownWrap').style.display = "none";
+        fill.style.width = "100%";
+    }, 10000); // 10 seconds for demo
   }
-  
-  updateCooldownUI();
-  calcPaidVote(document.getElementById('paid-eth-input'));
-  openModal('voteModal');
-}
 
-function selectVoteDir(dir, el) {
-  state.voteDir = dir;
-  el.closest('.seg-control').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  calcPaidVote(document.getElementById('paid-eth-input'));
-}
+  // 2. PAID RUSH LOGIC
+  function handlePaidRush() {
+    showToast("💰 Sending 0.0003 ETH to contract...");
+    // Add ethers.js logic here to call paidInteract(true) with value: parseEther("0.0003")
+  }
 
-function calcPaidVote(inputEl) {
-  const val = parseFloat(inputEl.value || inputEl) || MIN_ETH;
-  const mult = val / MIN_ETH;
-  const timeSec = Math.round(10 * mult);
-  const pts = Math.round(2 * mult);
-  const dirStr = state.voteDir < 0 ? `−${timeSec} sec` : `+${timeSec} sec`;
-  document.getElementById('paid-multiplier').textContent = mult.toFixed(2) + '×';
-  document.getElementById('paid-time-change').textContent = dirStr;
-  document.getElementById('paid-points').textContent = pts + ' pts';
-}
+  // 3. START GAME LOGIC
+  function handleStartGame() {
+    showToast("🚀 Starting New Round (0.000363 ETH)...");
+    // Add ethers.js logic here to call startGame(duration) with value
+  }
 
-async function doFreeVote() {
-    if(state.cooldownRemaining > 0) { showToast("Cooldown active!"); return; }
-    if(!await connectWallet()) return;
-    
-    closeModal('voteModal');
-    try {
-        showTxModal('Sending FREE Vote...', 'Confirm in wallet (Tiny gas fee)');
-        const tx = await contract.voteFree(state.activeRoundId, state.voteDir);
-        document.getElementById('txModalSub').textContent = "Waiting for confirmation...";
-        const receipt = await tx.wait();
-        
-        // Optimistic UI updates
-        state.cooldownRemaining = state.cooldownTotal;
-        state.myPoints += 2;
-        state.myTxns += 1;
-        updateProfileStats();
-        
-        closeTxModal();
-        showSuccessModal("Free Vote Cast! ✅", `Timer adjusted ${state.voteDir < 0 ? '-10s' : '+10s'}`, 2, receipt.hash);
-        fetchRounds();
-    } catch (e) {
-        closeTxModal();
-        console.error(e);
-        if(e.message.includes("Cooldown active")) showToast("Cooldown is active on chain!");
-        else showToast("Transaction Failed");
-    }
-}
+  // 4. CLAIM REWARD LOGIC
+  function handleClaimReward() {
+    showToast("🏆 Claiming Reward...");
+    // Add ethers.js logic here to call claimReward()
+  }
 
-async function doPaidVote() {
-    if(!await connectWallet()) return;
-    const valEth = document.getElementById('paid-eth-input').value;
-    if(!valEth || parseFloat(valEth) < MIN_ETH) return showToast("Invalid ETH amount");
+  // --- DUMMY UI UPDATE ENGINE (To see how UI reacts) ---
+  // In real app, fetch these from getGameData()
+  let isGameActive = true;
+  let timerSeconds = 65; // 1 min 5 seconds
 
-    closeModal('voteModal');
-    try {
-        const valWei = ethers.parseEther(valEth.toString());
-        showTxModal('Sending PAID Vote...', `Sending ${valEth} ETH on Arbitrum`);
-        
-        const tx = await contract.votePaid(state.activeRoundId, state.voteDir, { value: valWei });
-        document.getElementById('txModalSub').textContent = "Waiting for confirmation...";
-        const receipt = await tx.wait();
-        
-        // Optimistic UI Updates
-        const mult = parseFloat(valEth) / MIN_ETH;
-        const pts = Math.round(2 * mult);
-        const timeSec = Math.round(10 * mult);
-        
-        state.myPoints += pts;
-        state.myTxns += 1;
-        state.myEthSpent += parseFloat(valEth);
-        updateProfileStats();
-        
-        closeTxModal();
-        showSuccessModal("Paid Vote Cast! 🔥", `Timer adjusted ${state.voteDir < 0 ? '-' : '+'}${timeSec}s · ${mult.toFixed(2)}x`, pts, receipt.hash);
-        fetchRounds();
-    } catch (e) {
-        closeTxModal();
-        console.error(e);
-        showToast("Transaction Failed");
-    }
-}
+  function updateTimerUI() {
+    if(!isGameActive) return;
 
-// ════════════════════════════════════════════
-//  PROFILE & CLAIM LOGIC
-// ════════════════════════════════════════════
-function updateProfileStats() {
-  document.getElementById('myTotalPts').textContent = state.myPoints;
-  document.getElementById('prof-total-pts').textContent = state.myPoints;
-  document.getElementById('prof-total-txns').textContent = state.myTxns;
-  document.getElementById('prof-rounds-won').textContent = state.myRoundsWon;
-  document.getElementById('prof-eth-spent').textContent = state.myEthSpent.toFixed(6);
-}
-
-function buildCheckinDays() {
-  const c = document.getElementById('checkinDays');
-  c.innerHTML = state.checkinDays.map((done, i) => `
-    <div class="day-dot ${done ? 'done' : i === state.checkinDays.filter(Boolean).length ? 'today' : ''}">
-      ${done ? '✓' : i+1}
-    </div>
-  `).join('');
-}
-
-async function doCheckin() {
-    if(!await connectWallet()) return;
-    try {
-        showTxModal('Checking In...', 'Confirm gas fee on Arbitrum');
-        const tx = await contract.checkIn();
-        document.getElementById('txModalSub').textContent = "Waiting for confirmation...";
-        await tx.wait();
+    if(timerSeconds > 0) {
+        timerSeconds--;
+        const h = String(Math.floor(timerSeconds / 3600)).padStart(2, '0');
+        const m = String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0');
+        const s = String(timerSeconds % 60).padStart(2, '0');
         
-        closeTxModal();
+        const timerEl = document.getElementById('countdownTimer');
+        timerEl.textContent = `${h}:${m}:${s}`;
         
-        // Update Local State
-        const idx = state.checkinDays.findIndex(d => !d);
-        if (idx !== -1) state.checkinDays[idx] = true;
-        state.checkinToday = true;
-        
-        document.getElementById('checkinBtn').innerHTML = '✅ Checked In';
-        document.getElementById('checkinBtn').classList.add('btn-disabled');
-        buildCheckinDays();
-        state.myPoints += 5;
-        updateProfileStats();
-        
-        showToast('Check-in successful! +5 PTS');
-    } catch (e) {
-        closeTxModal();
-        console.error(e);
-        if(e.message.includes("Can only check-in once")) {
-            showToast("Already checked in today!");
-            document.getElementById('checkinBtn').innerHTML = '✅ Checked In';
-            document.getElementById('checkinBtn').classList.add('btn-disabled');
+        // Turn Red if less than 60 seconds
+        if(timerSeconds <= 60) {
+            timerEl.classList.add('danger');
         } else {
-            showToast("Transaction Failed");
+            timerEl.classList.remove('danger');
         }
-    }
-}
-
-async function claimReward() {
-    if(!await connectWallet()) return;
-    const roundId = document.getElementById('claim-round-id').value;
-    if(!roundId) return showToast("Enter a valid Round ID");
-
-    try {
-        showTxModal('Claiming Reward...', 'Confirm in wallet');
-        const tx = await contract.claimReward(roundId);
-        document.getElementById('txModalSub').textContent = "Waiting for confirmation...";
-        const receipt = await tx.wait();
+    } else {
+        // TIMER HIT ZERO
+        isGameActive = false;
+        document.getElementById('countdownTimer').textContent = "00:00:00";
+        document.getElementById('countdownTimer').classList.remove('danger');
         
-        closeTxModal();
-        state.myRoundsWon++;
-        updateProfileStats();
-        showSuccessModal("Reward Claimed! 🏆", "ETH has been transferred to your wallet.", 0, receipt.hash);
-        fetchRounds();
-    } catch (e) {
-        closeTxModal();
-        console.error(e);
-        if(e.message.includes("Not the highest scorer")) showToast("You are not the winner!");
-        else if (e.message.includes("Round is still active")) showToast("Round is not over yet!");
-        else if (e.message.includes("Reward already claimed")) showToast("Reward already claimed!");
-        else showToast("Transaction Failed");
+        // Hide normal buttons, show CLAIM button
+        document.getElementById('activeGameButtons').style.display = 'none';
+        document.getElementById('btnStartGame').style.display = 'none';
+        document.getElementById('btnClaimReward').style.display = 'block';
     }
-}
-
-// ════════════════════════════════════════════
-//  REFERRAL
-// ════════════════════════════════════════════
-function copyRefCode() {
-  navigator.clipboard.writeText(state.refCode).catch(() => {});
-  showToast('Copied: ' + state.refCode);
-}
-function shareRef() {
-  const url = `https://warpcast.com/~/compose?text=Join%20TimeBattle%20%E2%9A%A1%20with%20my%20code%20${state.refCode}%20and%20earn%20ARB%20tokens!%20%F0%9F%8E%81`;
-  window.open(url, '_blank');
-}
-async function applyRefCode() {
-    if(!await connectWallet()) return;
-    const codeAddr = document.getElementById('enterRefCode').value.trim();
-    if(!codeAddr || !codeAddr.startsWith("0x") || codeAddr.length !== 42) return showToast("Invalid Address format");
-    
-    try {
-        showTxModal('Applying Referral...', 'Confirm in wallet');
-        const tx = await contract.applyReferral(codeAddr);
-        document.getElementById('txModalSub').textContent = "Waiting for confirmation...";
-        await tx.wait();
-        
-        closeTxModal();
-        showToast("Referral Applied! ✅");
-        document.getElementById('enterRefCode').value = '';
-    } catch (e) {
-        closeTxModal();
-        console.error(e);
-        if(e.message.includes("Referral already applied")) showToast("Already applied a referral");
-        else showToast("Transaction Failed");
-    }
-}
-
-// ════════════════════════════════════════════
-//  LEADERBOARD MOCK
-// ════════════════════════════════════════════
-const globalPlayers = [
-  {name:'vitalik.eth', pts:1240},
-  {name:'dwr.eth', pts:890},
-  {name:'jessepollak', pts:760},
-  {name:'nick.eth', pts:580},
-  {name:'coinbase', pts:420},
-];
-function buildLeaderboard() {
-  const gl = document.getElementById('globalLbList');
-  gl.innerHTML = globalPlayers.map((p, i) => lbRow(p, i)).join('');
-  const rl = document.getElementById('roundLbList');
-  rl.innerHTML = '<p class="text-muted" style="text-align:center;padding:20px 0">Check individual round cards to see current highest scorer on-chain.</p>';
-}
-function lbRow(p, i) {
-  const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-  const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i+1);
-  return `<div class="lb-row">
-    <div class="lb-rank ${rankClass}">${medal}</div>
-    <div class="lb-avatar">${p.name[0].toUpperCase()}</div>
-    <div class="lb-name">${p.name}</div>
-    <div class="lb-pts">${p.pts} pts</div>
-  </div>`;
-}
-
-// ════════════════════════════════════════════
-//  UI HELPERS
-// ════════════════════════════════════════════
-function switchPage(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  el.classList.add('active');
-  if (id === 'lb') buildLeaderboard();
-}
-
-function switchRoundTab(tab, el) {
-  ['live','previous','create'].forEach(t => {
-    const el2 = document.getElementById('tab-' + t);
-    if (el2) el2.style.display = t === tab ? 'block' : 'none';
-  });
-  document.querySelectorAll('#page-rounds .section-tab').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
-
-function switchLbTab(tab, el) {
-  document.getElementById('lb-global').style.display = tab === 'global' ? 'block' : 'none';
-  document.getElementById('lb-round').style.display = tab === 'round' ? 'block' : 'none';
-  document.querySelectorAll('#page-lb .section-tab').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
-
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-function showTxModal(title, sub) {
-  document.getElementById('txModalTitle').textContent = title;
-  document.getElementById('txModalSub').textContent = sub;
-  openModal('txModal');
-}
-function closeTxModal() { closeModal('txModal'); }
-
-function showSuccessModal(title, msg, pts, hash) {
-  document.getElementById('txSuccessTitle').textContent = title;
-  document.getElementById('txSuccessMsg').textContent = msg;
-  document.getElementById('txSuccessPts').textContent = '+' + pts + ' PTS';
-  document.getElementById('txHash').textContent = 'tx: ' + (hash ? hash.slice(0,10)+'...'+hash.slice(-8) : '0x...');
-  const icon = pts >= 15 ? '🚀' : pts >= 10 ? '⭐' : '✅';
-  document.getElementById('txSuccessIcon').textContent = icon;
-  openModal('txSuccessModal');
-  
-  if (pts > 0) {
-      const track = document.getElementById('tickerTrack');
-      const item = document.createElement('span');
-      item.className = 'ticker-item';
-      item.innerHTML = `⚡ <span>You</span> voted ${state.voteDir < 0 ? '-10s' : '+10s'} · +${pts} pts`;
-      track.appendChild(item);
   }
-}
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-function goClaimRewards() {
-  closeModal('roundEndModal');
-  switchPage('profile', document.querySelectorAll('.nav-btn')[2]);
-}
-
-// Close modals on overlay click
-document.querySelectorAll('.modal-overlay').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
-});
-
-// Boot
-init();
+  // Start the dummy timer
+  setInterval(updateTimerUI, 1000);
 
 </script>
 </body>
